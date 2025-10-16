@@ -1,0 +1,17 @@
+# Node
+web/frontend/node_modules
+
+
+# Go
+**/bin
+**/dist
+**/coverage
+
+
+# Env
+.env
+.env.*
+
+.idea
+# Docker
+**/.DS_Store.idea
