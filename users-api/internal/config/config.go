@@ -10,15 +10,18 @@ import (
 
 type Config struct {
 	Port      string
-	Mongo     MongoConfig
 	Memcached MemcachedConfig
 	RabbitMQ  RabbitMQConfig
 	Solr      SolrConfig
+	MySQL     MySQLConfig
 }
 
-type MongoConfig struct {
-	URI string
-	DB  string
+type MySQLConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DB       string
 }
 
 type MemcachedConfig struct {
@@ -52,11 +55,14 @@ func Load() Config {
 		memcachedTTL = 60
 	}
 	return Config{
-		Port: getEnv("PORT", "8080"),
-		Mongo: MongoConfig{
-			URI: getEnv("MONGO_URI", "mongodb://localhost:27017"),
-			DB:  getEnv("MONGO_DB", "demo"),
+		MySQL: MySQLConfig{
+			Host:     getEnv("MYSQL_HOST", "localhost"),
+			Port:     getEnv("MYSQL_PORT", "3306"),
+			User:     getEnv("MYSQL_USER", "root"),
+			Password: getEnv("MYSQL_PASSWORD", ""),
+			DB:       getEnv("MYSQL_DB", "users-api"),
 		},
+		Port: getEnv("PORT", "8080"),
 		Memcached: MemcachedConfig{
 			Host:       getEnv("MEMCACHED_HOST", "localhost"),
 			Port:       getEnv("MEMCACHED_PORT", "11211"),

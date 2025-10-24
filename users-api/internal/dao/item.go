@@ -1,44 +1,35 @@
 package dao
 
 import (
-	"clase05-solr/internal/domain"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Item struct {
-	ID        primitive.ObjectID `bson:"_id"`
-	Name      string             `bson:"name"`
-	Price     float64            `bson:"price"`
-	CreatedAt time.Time          `bson:"created_at"`
-	UpdatedAt time.Time          `bson:"updated_at"`
+type Usuario struct {
+	IdUsuario    uint64    `gorm:"primaryKey;autoIncrement;column:id_usuario"`
+	Nombre       string    `gorm:"size:100;not null"`
+	Apellido     string    `gorm:"size:100;not null"`
+	Email        string    `gorm:"size:150;not null;unique"`
+	Username     string    `gorm:"size:100;not null;unique"`
+	PasswordHash string    `gorm:"size:250;not null;column:password_hash"`
+	Rol          string    `gorm:"type:enum('cliente','dueno');not null;default:'cliente'"`
+	Activo       bool      `gorm:"not null;default:true"`
+	CreadoEn     time.Time `gorm:"not null;autoCreateTime;column:creado_en"`
+	Negocios     []Negocio `gorm:"foreignKey:IDUsuario;references:IDUsuario"` // relación 1-N
 }
 
-// ToDomain convierte de modelo DB a modelo de negocio
-func (d Item) ToDomain() domain.Item {
-	return domain.Item{
-		ID:        d.ID.Hex(), // ObjectID -> string
-		Name:      d.Name,
-		Price:     d.Price,
-		CreatedAt: d.CreatedAt,
-		UpdatedAt: d.UpdatedAt,
-	}
+func (Usuario) TableName() string { return "usuarios" }
+
+type Negocio struct {
+	IDNegocio   uint64    `gorm:"primaryKey;autoIncrement;column:id_negocio"`
+	Nombre      string    `gorm:"size:150;not null"`
+	Descripcion string    `gorm:"size:255;not null"`
+	Direccion   string    `gorm:"size:255;not null"`
+	Telefono    string    `gorm:"size:50;not null"`
+	Sucursal    string    `gorm:"size:100;not null;default:'Principal'"`
+	IDUsuario   uint64    `gorm:"not null;column:id_usuario"`
+	Usuario     Usuario   `gorm:"foreignKey:IDUsuario;references:IDUsuario"`
+	Activo      bool      `gorm:"not null;default:true"`
+	CreadoEn    time.Time `gorm:"not null;autoCreateTime;column:creado_en"`
 }
 
-// FromDomain convierte de modelo de negocio a modelo DB
-func FromDomain(domainItem domain.Item) Item {
-	// Si el ID está vacío, DB generará uno automáticamente
-	var objectID primitive.ObjectID
-	if domainItem.ID != "" {
-		objectID, _ = primitive.ObjectIDFromHex(domainItem.ID)
-	}
-
-	return Item{
-		ID:        objectID,
-		Name:      domainItem.Name,
-		Price:     domainItem.Price,
-		CreatedAt: domainItem.CreatedAt,
-		UpdatedAt: domainItem.UpdatedAt,
-	}
-}
+func (Negocio) TableName() string { return "negocios" }

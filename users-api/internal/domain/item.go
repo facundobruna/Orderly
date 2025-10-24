@@ -1,30 +1,25 @@
 package domain
 
-import (
-	"time"
-)
-
-type SearchFilters struct {
-	ID       string   `json:"id"`
-	Name     string   `json:"name"`
-	MinPrice *float64 `json:"min_price"`
-	MaxPrice *float64 `json:"max_price"`
-	SortBy   string   `json:"sort_by"`
-	Page     int      `json:"page"`
-	Count    int      `json:"count"`
+type Usuario struct {
+	IdUsuario     string    `json:"id"`
+	Nombre        string    `json:"name"`
+	Apellido      string    `json:"last_name"`
+	Email         string    `json:"email"`
+	Password_hash string    `json:"password"`
+	Rol           string    `json:"role"`
+	Activo        bool      `json:"active"`
+	CreadoEn      string    `json:"created_at"`
+	Negocios      []Negocio `json:"negocios"`
 }
 
-type PaginatedResponse struct {
-	Page    int    `json:"page"`
-	Count   int    `json:"count"`
-	Total   int    `json:"total"`
-	Results []Item `json:"results"`
-}
-
-type Item struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Price     float64   `json:"price"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+type Negocio struct {
+	IdNegocio   string  `json:"id"`
+	Nombre      string  `json:"name"`
+	Descripcion string  `json:"description"`
+	Direccion   string  `json:"address"`
+	Telefono    string  `json:"phone"`
+	Sucursal    string  `json:"branch"`
+	Usuario     Usuario `json:"user"`
+	Activo      bool    `json:"active"`
+	CreadoEn    string  `json:"created_at"`
 }

@@ -27,7 +27,8 @@ func main() {
 	ctx := context.Background()
 
 	// Capa de datos: maneja operaciones DB
-	itemsMongoRepo := repository.NewMongoItemsRepository(ctx, cfg.Mongo.URI, cfg.Mongo.DB, "items")
+
+	usersMySQLRepo := repository.NewMySQLUsersRepository(ctx, cfg.MySQL.User, cfg.MySQL.Password, cfg.MySQL.Host, cfg.MySQL.Port, cfg.MySQL.DB)
 
 	// Capa de cache distribuida: maneja operaciones con Memcached
 	itemsMemcachedRepo := repository.NewMemcachedItemsRepository(
