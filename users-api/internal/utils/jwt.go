@@ -1,0 +1,75 @@
+package utils
+	
+import (
+	"errors"
+	"os"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+// Claims estructura personalizada para el JWT
+type Claims struct {
+	UserID   uint64 `json:"user_id"`
+	Username string `json:"username"`
+	Rol      string `json:"rol"`
+	jwt.RegisteredClaims
+}
+
+// getJWTSecret obtiene la clave secreta del JWT desde .env
+func getJWTSecret() []byte {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "mi-clave-super-secreta-cambiar-en-produccion" // default (no usar en prod)
+	}
+	return []byte(secret)
+}
+
+// GenerateToken genera un nuevo JWT token
+func GenerateToken(userID uint64, username string, rol string) (string, error) {
+	// Configurar claims
+	claims := Claims{
+		UserID:   userID,
+		Username: username,
+		Rol:      rol,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // expira en 24 horas
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "orderly-users-api",
+		},
+	}
+
+	// Crear token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Firmar token
+	tokenString, err := token.SignedString(getJWTSecret())
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+// ValidateToken valida y parsea un JWT token
+func ValidateToken(tokenString string) (*Claims, error) {
+	// Parsear token
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		// Verificar que el método de firma sea HMAC
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("método de firma inválido")
+		}
+		return getJWTSecret(), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Extraer claims
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("token inválido")
+}

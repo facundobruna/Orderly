@@ -1,46 +1,13 @@
+# Use root/example as user/password credentials
+
 services:
-  mongo:
-    image: mongo:latest
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
+
+  db:
+    image: mysql
+    restart: always
     environment:
-      - MONGO_INITDB_DATABASE=${MONGO_DB:-demo}
-    volumes:
-      - ./mongo-init:/docker-entrypoint-initdb.d:ro
-      - mongo_data:/data/db
-  memcached:
-    image: memcached:1.6-alpine
-    restart: unless-stopped
-    command: ["-m", "64"]
+      MYSQL_DATABASE: users
+      MYSQL_ROOT_PASSWORD: example
     ports:
-      - "11211:11211"
-  rabbit:
-    image: rabbitmq:3-management
-    container_name: rabbit
-    restart: unless-stopped
-    ports:
-      - "5672:5672"    # AMQP
-      - "15672:15672"  # Panel web
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-admin}
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-  solr:
-    image: solr:9
-    container_name: solr
-    restart: unless-stopped
-    ports:
-      - "8983:8983"
-    volumes:
-      - solr_data:/var/solr
-    command:
-      - solr-precreate
-      - demo
-volumes:
-  mongo_data:
-  solr_data:
+      - "3307:3306"
+    # (this is just an example, not intended to be a production configuration)

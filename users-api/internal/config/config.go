@@ -57,9 +57,9 @@ func Load() Config {
 	return Config{
 		MySQL: MySQLConfig{
 			Host:     getEnv("MYSQL_HOST", "localhost"),
-			Port:     getEnv("MYSQL_PORT", "3306"),
+			Port:     getEnv("MYSQL_PORT", "3307"),
 			User:     getEnv("MYSQL_USER", "root"),
-			Password: getEnv("MYSQL_PASSWORD", ""),
+			Password: getEnv("MYSQL_PASSWORD", "example"),
 			DB:       getEnv("MYSQL_DB", "users-api"),
 		},
 		Port: getEnv("PORT", "8080"),
