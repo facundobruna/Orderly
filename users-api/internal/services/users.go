@@ -6,6 +6,7 @@ import (
 	"clase05-solr/internal/utils"
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -81,12 +82,36 @@ func (s *UsersService) Register(ctx context.Context, req domain.RegisterRequest)
 
 // Login autentica un usuario y retorna un JWT
 func (s *UsersService) Login(ctx context.Context, req domain.LoginRequest) (domain.LoginResponse, error) {
-	// TODO: Implementar login
+
 	// 1. Buscar usuario por username
 	// 2. Verificar contraseña
 	// 3. Generar JWT
 	// 4. Retornar token y usuario
-	return domain.LoginResponse{}, errors.New("TODO: implementar login")
+
+	userDAO, err := s.repo.GetUserByUsername(ctx, req.Username)
+	var usuario domain.Usuario
+
+	usuario.ID = userDAO.IdUsuario
+	if err != nil {
+		return domain.LoginResponse{}, fmt.Errorf("error getting user: %w", err)
+	}
+
+	if !userDAO.Activo {
+		return domain.LoginResponse{}, errors.New("Usuario inactivo")
+	}
+
+	if !utils.CheckPassword(req.Password, userDAO.PasswordHash) {
+		return domain.LoginResponse{}, errors.New("Credenciales incorrectas")
+	}
+	token, err := utils.GenerateToken(userDAO.IdUsuario, userDAO.Username, userDAO.Rol)
+	if err != nil {
+		return domain.LoginResponse{}, errors.New("Error al generar token de autenticacion")
+	}
+
+	return domain.LoginResponse{
+		Token: token,
+		User:  userDAO.ToDomain(),
+	}, nil
 }
 
 // GetUserByID obtiene un usuario por su ID

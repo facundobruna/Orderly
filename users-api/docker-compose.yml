@@ -10,4 +10,4 @@ services:
       MYSQL_ROOT_PASSWORD: example
     ports:
       - "3307:3306"
-    # (this is just an example, not intended to be a production configuration)
+    

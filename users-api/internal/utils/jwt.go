@@ -1,5 +1,5 @@
 package utils
-	
+
 import (
 	"errors"
 	"os"
@@ -16,11 +16,10 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// getJWTSecret obtiene la clave secreta del JWT desde .env
 func getJWTSecret() []byte {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		secret = "mi-clave-super-secreta-cambiar-en-produccion" // default (no usar en prod)
+		secret = "CuartetoDinamico2025"
 	}
 	return []byte(secret)
 }

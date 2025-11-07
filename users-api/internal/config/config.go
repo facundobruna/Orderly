@@ -45,9 +45,19 @@ type SolrConfig struct {
 }
 
 func Load() Config {
-	// Load .env file
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found or error loading .env file")
+	// Load .env file - intentar desde múltiples ubicaciones posibles
+	err := godotenv.Load(".env")
+	if err != nil {
+		// Intentar desde la raíz del proyecto (dos niveles arriba desde cmd/api)
+		err = godotenv.Load("../../.env")
+		if err != nil {
+			log.Println("Warning: No .env file found, using default values or system environment variables")
+			log.Println("Searched in: .env and ../../.env")
+		} else {
+			log.Println("Successfully loaded .env from ../../.env")
+		}
+	} else {
+		log.Println("Successfully loaded .env from current directory")
 	}
 
 	memcachedTTL, err := strconv.Atoi(getEnv("MEMCACHED_TTL_SECONDS", "60"))
@@ -60,7 +70,7 @@ func Load() Config {
 			Port:     getEnv("MYSQL_PORT", "3307"),
 			User:     getEnv("MYSQL_USER", "root"),
 			Password: getEnv("MYSQL_PASSWORD", "example"),
-			DB:       getEnv("MYSQL_DB", "users-api"),
+			DB:       getEnv("MYSQL_DB", "users"),
 		},
 		Port: getEnv("PORT", "8080"),
 		Memcached: MemcachedConfig{

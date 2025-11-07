@@ -51,3 +51,11 @@ type CreateNegocioRequest struct {
 	Telefono    string `json:"telefono" binding:"required"`
 	Sucursal    string `json:"sucursal"`
 }
+
+type UpdateNegocioRequest struct {
+	Nombre      *string `json:"nombre"`
+	Descripcion *string `json:"descripcion"`
+	Direccion   *string `json:"direccion"`
+	Telefono    *string `json:"telefono"`
+	Sucursal    *string `json:"sucursal"`
+}

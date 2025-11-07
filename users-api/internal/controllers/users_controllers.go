@@ -2,8 +2,10 @@ package controllers
 
 import (
 	"clase05-solr/internal/domain"
+	"clase05-solr/internal/middleware"
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,6 +14,7 @@ import (
 type AuthService interface {
 	Register(ctx context.Context, req domain.RegisterRequest) (domain.Usuario, error)
 	Login(ctx context.Context, req domain.LoginRequest) (domain.LoginResponse, error)
+	GetUserByID(ctx context.Context, id uint64) (domain.Usuario, error)
 }
 
 // AuthController maneja las peticiones HTTP de autenticación
@@ -97,4 +100,75 @@ func (c *AuthController) Login(ctx *gin.Context) {
 
 	// 3. Responder con token
 	ctx.JSON(http.StatusOK, response)
+}
+
+// UsersController maneja las peticiones HTTP de usuarios
+type UsersController struct {
+	service AuthService
+}
+
+// NewUsersController crea una nueva instancia del controller
+func NewUsersController(service AuthService) *UsersController {
+	return &UsersController{service: service}
+}
+
+// GetMe maneja GET /users/me - obtiene el perfil del usuario autenticado
+func (c *UsersController) GetMe(ctx *gin.Context) {
+	// 1. Obtener userID del contexto (inyectado por middleware)
+	userID, exists := middleware.GetUserIDFromContext(ctx)
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"error": "No se pudo obtener el ID del usuario",
+		})
+		return
+	}
+
+	// 2. Obtener usuario
+	user, err := c.service.GetUserByID(ctx.Request.Context(), userID)
+	if err != nil {
+		statusCode := http.StatusInternalServerError
+		if err.Error() == "usuario no encontrado" {
+			statusCode = http.StatusNotFound
+		}
+
+		ctx.JSON(statusCode, gin.H{
+			"error":   "Error al obtener usuario",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// 3. Responder con el usuario
+	ctx.JSON(http.StatusOK, user)
+}
+
+// GetByID maneja GET /users/:id - obtiene un usuario por ID
+func (c *UsersController) GetByID(ctx *gin.Context) {
+	// 1. Obtener ID del parámetro
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID inválido",
+		})
+		return
+	}
+
+	// 2. Obtener usuario
+	user, err := c.service.GetUserByID(ctx.Request.Context(), id)
+	if err != nil {
+		statusCode := http.StatusInternalServerError
+		if err.Error() == "usuario no encontrado" {
+			statusCode = http.StatusNotFound
+		}
+
+		ctx.JSON(statusCode, gin.H{
+			"error":   "Error al obtener usuario",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// 3. Responder con el usuario
+	ctx.JSON(http.StatusOK, user)
 }
