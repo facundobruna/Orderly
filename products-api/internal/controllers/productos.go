@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"clase05-solr/internal/domain"
+	"products-api/internal/domain"
 	"context"
 	"net/http"
 	"strconv"

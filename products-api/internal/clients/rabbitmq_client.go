@@ -1,7 +1,6 @@
 package clients
 
 import (
-	"clase05-solr/internal/services"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -65,42 +64,3 @@ func (r *RabbitMQClient) Publish(ctx context.Context, action string, itemID stri
 	return nil
 }
 
-func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Context, services.ItemEvent) error) error {
-	// Configurar el consumer
-	msgs, err := r.channel.Consume(
-		r.queue.Name, // queue
-		"",           // consumer
-		true,         // auto-ack
-		false,        // exclusive
-		false,        // no-local
-		false,        // no-wait
-		nil,          // args
-	)
-	if err != nil {
-		return fmt.Errorf("failed to register consumer: %w", err)
-	}
-
-	log.Printf("🎯 Consumer registered for queue: %s", r.queue.Name)
-
-	// Loop infinito para consumir mensajes
-	for {
-		select {
-		case <-ctx.Done():
-			log.Println("🛑 Consumer context cancelled")
-			return ctx.Err()
-
-		case msg := <-msgs:
-			// Deserializar mensaje
-			var event services.ItemEvent
-			if err := json.Unmarshal(msg.Body, &event); err != nil {
-				log.Printf("❌ Error unmarshalling message: %v", err)
-				continue
-			}
-
-			// Procesar mensaje
-			if err := handler(ctx, event); err != nil {
-				log.Printf("❌ Error handling message: %v", err)
-			}
-		}
-	}
-}

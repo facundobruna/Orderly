@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"clase05-solr/internal/dao"
-	"clase05-solr/internal/domain"
+	"products-api/internal/dao"
+	"products-api/internal/domain"
 	"context"
 	"errors"
 	"log"
@@ -37,7 +37,7 @@ func NewMongoProductosRepository(ctx context.Context, uri, dbName, collectionNam
 		return nil
 	}
 
-	log.Println("✅ Conexión exitosa a MongoDB (Products)")
+	log.Println("Conexión exitosa a MongoDB (Products)")
 
 	return &MongoProductosRepository{
 		col: client.Database(dbName).Collection(collectionName),
@@ -50,7 +50,7 @@ func (r *MongoProductosRepository) Create(ctx context.Context, producto domain.P
 	productoDAO.ID = primitive.NewObjectID()
 	productoDAO.CreatedAt = time.Now().UTC()
 	productoDAO.UpdatedAt = time.Now().UTC()
-	
+
 	if producto.Disponible == false && producto.PrecioBase > 0 {
 		productoDAO.Disponible = true
 	}

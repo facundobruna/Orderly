@@ -15,10 +15,8 @@ import (
 )
 
 func main() {
-	// 📋 Cargar configuración desde las variables de entorno
 	cfg := config.Load()
 
-	// 🏗️ Inicializar contexto
 	ctx := context.Background()
 
 	// 🗄️ Inicializar repository de usuarios (MySQL)
@@ -78,17 +76,17 @@ func main() {
 	negocios := router.Group("/negocios")
 	{
 		// Rutas públicas
-		negocios.GET("", negociosController.ListAll)       // GET /negocios - listar todos
-		negocios.GET("/:id", negociosController.GetByID)   // GET /negocios/:id - ver detalle
+		negocios.GET("", negociosController.ListAll)     // GET /negocios - listar todos
+		negocios.GET("/:id", negociosController.GetByID) // GET /negocios/:id - ver detalle
 
 		// Rutas protegidas (requieren autenticación)
 		negociosProtected := negocios.Group("")
 		negociosProtected.Use(middleware.AuthMiddleware())
 		{
-			negociosProtected.POST("", middleware.RequireRole("dueno"), negociosController.Create)  // Solo dueños
-			negociosProtected.GET("/my", negociosController.ListMyNegocios)                         // Mis negocios
-			negociosProtected.PUT("/:id", negociosController.Update)                                // Actualizar
-			negociosProtected.DELETE("/:id", negociosController.Delete)                             // Eliminar
+			negociosProtected.POST("", middleware.RequireRole("dueno"), negociosController.Create) // Solo dueños
+			negociosProtected.GET("/my", negociosController.ListMyNegocios)                        // Mis negocios
+			negociosProtected.PUT("/:id", negociosController.Update)                               // Actualizar
+			negociosProtected.DELETE("/:id", negociosController.Delete)                            // Eliminar
 		}
 	}
 

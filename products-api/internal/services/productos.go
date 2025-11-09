@@ -1,7 +1,7 @@
 package services
 
 import (
-	"clase05-solr/internal/domain"
+	"products-api/internal/domain"
 	"context"
 	"errors"
 	"fmt"
@@ -71,9 +71,11 @@ func (s *ProductosService) Create(ctx context.Context, req domain.CreateProducto
 	}
 
 	// Publicar evento
-	if err := s.publisher.Publish(ctx, "create", created.ID); err != nil {
-		// Log error pero no fallar la operación
-		fmt.Printf("⚠️  Error publicando evento de creación: %v\n", err)
+	if s.publisher != nil {
+		if err := s.publisher.Publish(ctx, "create", created.ID); err != nil {
+			// Log error pero no fallar la operación
+			fmt.Printf("Error publicando evento de creación: %v\n", err)
+		}
 	}
 
 	return created, nil
@@ -118,8 +120,10 @@ func (s *ProductosService) Update(ctx context.Context, id string, req domain.Upd
 	}
 
 	// Publicar evento
-	if err := s.publisher.Publish(ctx, "update", updated.ID); err != nil {
-		fmt.Printf("⚠️  Error publicando evento de actualización: %v\n", err)
+	if s.publisher != nil {
+		if err := s.publisher.Publish(ctx, "update", updated.ID); err != nil {
+			fmt.Printf(" Error publicando evento de actualización: %v\n", err)
+		}
 	}
 
 	return updated, nil
@@ -137,8 +141,10 @@ func (s *ProductosService) Delete(ctx context.Context, id string) error {
 	}
 
 	// Publicar evento
-	if err := s.publisher.Publish(ctx, "delete", id); err != nil {
-		fmt.Printf("⚠️  Error publicando evento de eliminación: %v\n", err)
+	if s.publisher != nil {
+		if err := s.publisher.Publish(ctx, "delete", id); err != nil {
+			fmt.Printf("⚠️  Error publicando evento de eliminación: %v\n", err)
+		}
 	}
 
 	return nil
