@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"products-api/internal/clients"
 	"products-api/internal/config"
 	"products-api/internal/controllers"
 	"products-api/internal/middleware"
@@ -20,26 +21,33 @@ func main() {
 
 	// Contexto
 	ctx := context.Background()
-
+	cacheClient := clients.NewMemcachedClient(
+		cfg.Memcached.Host+":"+cfg.Memcached.Port,
+		cfg.Memcached.TTLSeconds,
+	)
 	// Repository de productos (MongoDB)
+	solrClient := clients.NewSolrClient(cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core) // Ajusta los parámetros según tu configuración
+
 	productosRepo := repository.NewMongoProductosRepository(
 		ctx,
 		cfg.Mongo.URI,
 		cfg.Mongo.DB,
-		"productos", // Nombre de la colección
+		"productos",
+		cacheClient,
+		solrClient, // Agregar el parámetro que faltaba
 	)
 
-	// RabbitMQ para eventos (comentado temporalmente)
-	// productosQueue := clients.NewRabbitMQClient(
-	// 	cfg.RabbitMQ.Username,
-	// 	cfg.RabbitMQ.Password,
-	// 	"productos-events", // Nombre de la cola
-	// 	cfg.RabbitMQ.Host,
-	// 	cfg.RabbitMQ.Port,
-	// )
+	// RabbitMQ para eventos
+	productosQueue := clients.NewRabbitMQClient(
+		cfg.RabbitMQ.Username,
+		cfg.RabbitMQ.Password,
+		"productos-events", // Nombre de la cola
+		cfg.RabbitMQ.Host,
+		cfg.RabbitMQ.Port,
+	)
 
-	// Service de productos (nil para el publisher hasta que RabbitMQ esté configurado)
-	productosService := services.NewProductosService(productosRepo, nil)
+	// Service de productos
+	productosService := services.NewProductosService(productosRepo, productosQueue)
 
 	// Controller de productos
 	productosController := controllers.NewProductosController(productosService)
@@ -62,6 +70,7 @@ func main() {
 		products.PUT("/:id", productosController.Update)
 		products.DELETE("/:id", productosController.Delete)
 		products.POST("/:id/quote", productosController.Quote)
+		products.GET("/search", productosController.SearchProducts)
 	}
 
 	// Configuración del servidor
