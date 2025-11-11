@@ -1,13 +1,15 @@
 package repository
 
 import (
-	"products-api/internal/dao"
-	"products-api/internal/domain"
 	"context"
 	"errors"
 	"log"
+	"products-api/internal/clients"
+	"products-api/internal/dao"
+	"products-api/internal/domain"
 	"time"
 
+	"github.com/bradfitz/gomemcache/memcache"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,11 +18,14 @@ import (
 
 // MongoProductosRepository implementa el repositorio de productos con MongoDB
 type MongoProductosRepository struct {
-	col *mongo.Collection
+	col   *mongo.Collection
+	cache *clients.MemcachedClient
+	solr  *clients.SolrClient
 }
 
 // NewMongoProductosRepository crea una nueva instancia del repository
-func NewMongoProductosRepository(ctx context.Context, uri, dbName, collectionName string) *MongoProductosRepository {
+// cache puede ser nil si no se quiere usar caché
+func NewMongoProductosRepository(ctx context.Context, uri, dbName, collectionName string, cache *clients.MemcachedClient, solr *clients.SolrClient) *MongoProductosRepository {
 	opt := options.Client().ApplyURI(uri)
 	opt.SetServerSelectionTimeout(10 * time.Second)
 
@@ -39,9 +44,42 @@ func NewMongoProductosRepository(ctx context.Context, uri, dbName, collectionNam
 
 	log.Println("Conexión exitosa a MongoDB (Products)")
 
-	return &MongoProductosRepository{
-		col: client.Database(dbName).Collection(collectionName),
+	if cache != nil {
+		if err := cache.Ping(); err != nil {
+			log.Printf("Advertencia: Memcached no está disponible: %v", err)
+			cache = nil // Desactivar caché si no está disponible
+		} else {
+			log.Println("✓ Conexión exitosa a Memcached")
+		}
 	}
+
+	if solr != nil {
+		if err := solr.Ping(); err != nil {
+			log.Printf("Advertencia: Solr no está disponible: %v", err)
+			solr = nil
+		} else {
+			log.Println("Conexión exitosa a Solr")
+		}
+	}
+
+	return &MongoProductosRepository{
+		col:   client.Database(dbName).Collection(collectionName),
+		cache: cache,
+		solr:  solr,
+	}
+}
+func (r *MongoProductosRepository) HasSolr() bool {
+	return r.solr != nil
+}
+
+// SearchWithSolr busca productos usando Solr
+func (r *MongoProductosRepository) SearchWithSolr(ctx context.Context, query string, filters map[string]string) ([]domain.Producto, error) {
+	if r.solr == nil {
+		return nil, errors.New("Solr no está disponible")
+	}
+
+	// Llamar al método de búsqueda de Solr
+	return r.solr.Search(query, filters)
 }
 
 // Create inserta un nuevo producto
@@ -65,12 +103,30 @@ func (r *MongoProductosRepository) Create(ctx context.Context, producto domain.P
 	} else {
 		return domain.Producto{}, errors.New("failed to convert inserted ID to ObjectID")
 	}
-
-	return productoDAO.ToDomain(), nil
+	created := productoDAO.ToDomain()
+	if r.solr != nil {
+		if err := r.solr.Index(created); err != nil {
+			log.Printf("Error indexing producto: %v", err)
+		}
+	}
+	return created, nil
 }
 
 // GetByID busca un producto por su ID
 func (r *MongoProductosRepository) GetByID(ctx context.Context, id string) (domain.Producto, error) {
+	if r.cache != nil {
+		cachekey := clients.BuildKey("producto", id)
+		var producto domain.Producto
+		err := r.cache.Get(cachekey, &producto)
+		if err == nil {
+			return producto, nil
+		}
+		if err != memcache.ErrCacheMiss {
+			log.Printf(" Error leyendo de caché: %v", err)
+		}
+
+	}
+
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return domain.Producto{}, errors.New("invalid ObjectID format")
@@ -84,6 +140,15 @@ func (r *MongoProductosRepository) GetByID(ctx context.Context, id string) (doma
 			return domain.Producto{}, errors.New("producto no encontrado")
 		}
 		return domain.Producto{}, err
+	}
+	producto := productoDAO.ToDomain()
+	if r.cache != nil {
+		cachekey := clients.BuildKey("producto", id)
+		err = r.cache.Set(cachekey, producto)
+		if err != nil {
+			log.Printf("⚠️  Error guardando en caché: %v", err)
+		}
+		return producto, nil
 	}
 
 	return productoDAO.ToDomain(), nil
@@ -142,7 +207,12 @@ func (r *MongoProductosRepository) List(ctx context.Context, filters domain.Sear
 	if err != nil {
 		return domain.PaginatedResponse{}, err
 	}
-	defer cur.Close(ctx)
+	defer func(cur *mongo.Cursor, ctx context.Context) {
+		err := cur.Close(ctx)
+		if err != nil {
+			log.Printf("Error cerrando cursor: %v", err)
+		}
+	}(cur, ctx)
 
 	var productosDAO []dao.Producto
 	if err := cur.All(ctx, &productosDAO); err != nil {
@@ -164,6 +234,10 @@ func (r *MongoProductosRepository) List(ctx context.Context, filters domain.Sear
 }
 
 // Update actualiza un producto existente
+//
+// PATRÓN DE CACHÉ: Write-Through + Invalidación
+// 1. Actualizar en MongoDB (fuente de verdad)
+// 2. Invalidar la caché para que la próxima lectura obtenga el valor actualizado
 func (r *MongoProductosRepository) Update(ctx context.Context, id string, req domain.UpdateProductoRequest) (domain.Producto, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -224,7 +298,7 @@ func (r *MongoProductosRepository) Update(ctx context.Context, id string, req do
 		setFields["tags"] = *req.Tags
 	}
 
-	// Ejecutar update
+	// PASO 1: Ejecutar update en MongoDB (fuente de verdad)
 	filter := bson.M{"_id": objectID}
 	result := r.col.FindOneAndUpdate(
 		ctx,
@@ -245,7 +319,24 @@ func (r *MongoProductosRepository) Update(ctx context.Context, id string, req do
 		return domain.Producto{}, err
 	}
 
-	return productoDAO.ToDomain(), nil
+	// PASO 2: Invalidar caché (si está disponible)
+	// Eliminamos el producto viejo de la caché para que la próxima lectura
+	// obtenga el valor actualizado de MongoDB
+	if r.cache != nil {
+		cacheKey := clients.BuildKey("producto", id)
+		if err := r.cache.Delete(cacheKey); err != nil {
+			// Log el error pero no fallar la operación
+			// El update en MongoDB ya se completó exitosamente
+			log.Printf("⚠️  Error invalidando caché para producto %s: %v", id, err)
+		}
+	}
+	updated := productoDAO.ToDomain()
+	if r.solr != nil {
+		if err := r.solr.Update(updated); err != nil {
+			log.Printf("Error actualizando producto en Solr: %v", err)
+		}
+	}
+	return updated, nil
 }
 
 // Delete elimina un producto por ID
@@ -264,7 +355,17 @@ func (r *MongoProductosRepository) Delete(ctx context.Context, id string) error 
 	if result.DeletedCount == 0 {
 		return errors.New("producto no encontrado")
 	}
-
+	if r.cache != nil {
+		cacheKey := clients.BuildKey("producto", id)
+		if err := r.cache.Delete(cacheKey); err != nil {
+			log.Printf("Error eliminando producto de la cache")
+		}
+	}
+	if r.solr != nil {
+		if err := r.solr.Delete(id); err != nil {
+			log.Printf("Error eliminando producto de Solr: %v", err)
+		}
+	}
 	return nil
 }
 

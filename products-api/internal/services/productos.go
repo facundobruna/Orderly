@@ -1,10 +1,10 @@
 package services
 
 import (
-	"products-api/internal/domain"
 	"context"
 	"errors"
 	"fmt"
+	"products-api/internal/domain"
 	"strings"
 )
 
@@ -16,6 +16,8 @@ type ProductosRepository interface {
 	Update(ctx context.Context, id string, req domain.UpdateProductoRequest) (domain.Producto, error)
 	Delete(ctx context.Context, id string) error
 	Quote(ctx context.Context, id string, varianteNombre string, modificadoresNombres []string) (float64, error)
+	HasSolr() bool
+	SearchWithSolr(ctx context.Context, query string, filters map[string]string) ([]domain.Producto, error)
 }
 
 // ProductosPublisher publica eventos de productos
@@ -182,4 +184,45 @@ func (s *ProductosService) validateCreateRequest(req domain.CreateProductoReques
 	}
 
 	return nil
+}
+func (s *ProductosService) SearchProducts(ctx context.Context, query string, filters map[string]string) ([]domain.Producto, error) {
+	// Si el repository tiene Solr habilitado, usarlo
+	if s.repository.HasSolr() { // Necesitarás agregar este método al repository
+		return s.searchWithSolr(ctx, query, filters)
+	}
+
+	// Fallback a MongoDB
+	return s.searchWithMongo(ctx, query, filters)
+}
+
+// searchWithSolr busca productos usando Solr
+func (s *ProductosService) searchWithSolr(ctx context.Context, query string, filters map[string]string) ([]domain.Producto, error) {
+	return s.repository.SearchWithSolr(ctx, query, filters)
+}
+
+// searchWithMongo busca productos usando MongoDB como fallback
+func (s *ProductosService) searchWithMongo(ctx context.Context, query string, filters map[string]string) ([]domain.Producto, error) {
+	searchFilters := domain.SearchFilters{
+		Nombre: query,
+		Page:   1,
+		Limit:  50,
+	}
+
+	// Mapear filtros
+	if negocioID, exists := filters["negocio_id"]; exists {
+		searchFilters.NegocioID = negocioID
+	}
+	if sucursalID, exists := filters["sucursal_id"]; exists {
+		searchFilters.SucursalID = sucursalID
+	}
+	if categoria, exists := filters["categoria"]; exists {
+		searchFilters.Categoria = categoria
+	}
+
+	result, err := s.repository.List(ctx, searchFilters)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Results, nil
 }

@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"products-api/internal/domain"
 	"context"
 	"net/http"
+	"products-api/internal/domain"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +17,7 @@ type ProductosService interface {
 	Update(ctx context.Context, id string, req domain.UpdateProductoRequest) (domain.Producto, error)
 	Delete(ctx context.Context, id string) error
 	Quote(ctx context.Context, id string, varianteNombre string, modificadoresNombres []string) (float64, error)
+	SearchProducts(ctx context.Context, query string, filters map[string]string) ([]domain.Producto, error)
 }
 
 // ProductosController maneja las peticiones HTTP para productos
@@ -222,5 +223,32 @@ func (c *ProductosController) Quote(ctx *gin.Context) {
 		"variante":      req.Variante,
 		"modificadores": req.Modificadores,
 		"precio_total":  total,
+	})
+}
+func (c *ProductosController) SearchProducts(ctx *gin.Context) {
+	query := ctx.Query("q") // Query de búsqueda
+	if query == "" {
+		query = "*:*" // Todos si no hay query
+	}
+
+	// Filtros opcionales
+	filters := make(map[string]string)
+	if categoria := ctx.Query("categoria"); categoria != "" {
+		filters["categoria"] = categoria
+	}
+	if negocioID := ctx.Query("negocio_id"); negocioID != "" {
+		filters["negocio_id"] = negocioID
+	}
+
+	// Buscar en Solr (necesitas agregar método Search al servicio)
+	resultados, err := c.service.SearchProducts(ctx, query, filters)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"query":   query,
+		"results": resultados,
 	})
 }
