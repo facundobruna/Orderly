@@ -25,17 +25,24 @@ type ProductosPublisher interface {
 	Publish(ctx context.Context, action string, productoID string) error
 }
 
+// NegocioValidator valida la existencia de negocios
+type NegocioValidator interface {
+	ValidateNegocioExists(ctx context.Context, negocioID string) (bool, error)
+}
+
 // ProductosService implementa la lógica de negocio para productos
 type ProductosService struct {
-	repository ProductosRepository
-	publisher  ProductosPublisher
+	repository        ProductosRepository
+	publisher         ProductosPublisher
+	negocioValidator  NegocioValidator
 }
 
 // NewProductosService crea una nueva instancia del service
-func NewProductosService(repository ProductosRepository, publisher ProductosPublisher) *ProductosService {
+func NewProductosService(repository ProductosRepository, publisher ProductosPublisher, negocioValidator NegocioValidator) *ProductosService {
 	return &ProductosService{
-		repository: repository,
-		publisher:  publisher,
+		repository:       repository,
+		publisher:        publisher,
+		negocioValidator: negocioValidator,
 	}
 }
 
@@ -44,6 +51,17 @@ func (s *ProductosService) Create(ctx context.Context, req domain.CreateProducto
 	// Validar request
 	if err := s.validateCreateRequest(req); err != nil {
 		return domain.Producto{}, err
+	}
+
+	// Validar que el negocio existe
+	if s.negocioValidator != nil {
+		exists, err := s.negocioValidator.ValidateNegocioExists(ctx, req.NegocioID)
+		if err != nil {
+			return domain.Producto{}, fmt.Errorf("error validando negocio: %w", err)
+		}
+		if !exists {
+			return domain.Producto{}, errors.New("el negocio especificado no existe")
+		}
 	}
 
 	// Convertir request a producto

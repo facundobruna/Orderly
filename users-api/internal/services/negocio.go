@@ -180,3 +180,15 @@ func (s *NegociosService) DeleteNegocio(ctx context.Context, negocioID uint64, u
 	// Eliminar el negocio (soft delete)
 	return s.repo.DeleteNegocio(ctx, negocioID)
 }
+
+// ExistsNegocio verifica si un negocio existe
+func (s *NegociosService) ExistsNegocio(ctx context.Context, id uint64) (bool, error) {
+	_, err := s.repo.GetnegocioByID(ctx, id)
+	if err != nil {
+		if err.Error() == "negocio no encontrado" {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}

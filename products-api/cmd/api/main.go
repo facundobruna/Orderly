@@ -46,8 +46,11 @@ func main() {
 		cfg.RabbitMQ.Port,
 	)
 
+	// Cliente para validar negocios con users-api
+	usersAPIClient := clients.NewUsersAPIClient(cfg.UsersAPI.BaseURL)
+
 	// Service de productos
-	productosService := services.NewProductosService(productosRepo, productosQueue)
+	productosService := services.NewProductosService(productosRepo, productosQueue, usersAPIClient)
 
 	// Controller de productos
 	productosController := controllers.NewProductosController(productosService)
