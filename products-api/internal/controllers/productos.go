@@ -49,7 +49,8 @@ func (c *ProductosController) Create(ctx *gin.Context) {
 			err.Error() == "el ID de la sucursal es requerido" ||
 			err.Error() == "el nombre del producto es requerido" ||
 			err.Error() == "el precio base debe ser mayor o igual a 0" ||
-			err.Error() == "la categoría es requerida" {
+			err.Error() == "la categoría es requerida" ||
+			err.Error() == "el negocio especificado no existe" {
 			statusCode = http.StatusBadRequest
 		}
 

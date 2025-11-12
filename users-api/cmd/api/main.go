@@ -76,8 +76,9 @@ func main() {
 	negocios := router.Group("/negocios")
 	{
 		// Rutas públicas
-		negocios.GET("", negociosController.ListAll)     // GET /negocios - listar todos
-		negocios.GET("/:id", negociosController.GetByID) // GET /negocios/:id - ver detalle
+		negocios.GET("", negociosController.ListAll)           // GET /negocios - listar todos
+		negocios.GET("/:id", negociosController.GetByID)       // GET /negocios/:id - ver detalle
+		negocios.GET("/:id/exists", negociosController.Exists) // GET /negocios/:id/exists - validar existencia
 
 		// Rutas protegidas (requieren autenticación)
 		negociosProtected := negocios.Group("")

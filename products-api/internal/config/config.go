@@ -14,6 +14,7 @@ type Config struct {
 	Memcached MemcachedConfig
 	RabbitMQ  RabbitMQConfig
 	Solr      SolrConfig
+	UsersAPI  UsersAPIConfig
 }
 
 type MongoConfig struct {
@@ -39,6 +40,10 @@ type SolrConfig struct {
 	Host string
 	Port string
 	Core string
+}
+
+type UsersAPIConfig struct {
+	BaseURL string
 }
 
 func Load() Config {
@@ -73,6 +78,9 @@ func Load() Config {
 			Host: getEnv("SOLR_HOST", "localhost"),
 			Port: getEnv("SOLR_PORT", "8983"),
 			Core: getEnv("SOLR_CORE", "demo"),
+		},
+		UsersAPI: UsersAPIConfig{
+			BaseURL: getEnv("USERS_API_URL", "http://localhost:8080"),
 		},
 	}
 }
