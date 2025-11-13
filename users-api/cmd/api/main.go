@@ -91,14 +91,18 @@ func main() {
 			negociosProtected.GET("/my", negociosController.ListMyNegocios)                        // Mis negocios
 			negociosProtected.PUT("/:id", negociosController.Update)                               // Actualizar
 			negociosProtected.DELETE("/:id", negociosController.Delete)                            // Eliminar
-
-			// 🪑 Rutas de mesas (requieren autenticación)
-			negociosProtected.GET("/:id/mesas", mesasController.GetMesasByNegocio)            // Listar mesas
-			negociosProtected.POST("/:id/mesas", mesasController.CreateMesa)                  // Crear mesa
-			negociosProtected.GET("/:id/mesas/:mesa_id", mesasController.GetMesa)             // Ver mesa
-			negociosProtected.PUT("/:id/mesas/:mesa_id", mesasController.UpdateMesa)          // Actualizar mesa
-			negociosProtected.DELETE("/:id/mesas/:mesa_id", mesasController.DeleteMesa)       // Eliminar mesa
 		}
+	}
+
+	// 🪑 Rutas de mesas (requieren autenticación) - Separadas para evitar conflictos
+	mesas := router.Group("/negocios/:id/mesas")
+	mesas.Use(middleware.AuthMiddleware())
+	{
+		mesas.GET("", mesasController.GetMesasByNegocio)          // Listar mesas
+		mesas.POST("", mesasController.CreateMesa)                // Crear mesa
+		mesas.GET("/:mesa_id", mesasController.GetMesa)           // Ver mesa
+		mesas.PUT("/:mesa_id", mesasController.UpdateMesa)        // Actualizar mesa
+		mesas.DELETE("/:mesa_id", mesasController.DeleteMesa)     // Eliminar mesa
 	}
 
 	// Configuración del server HTTP
