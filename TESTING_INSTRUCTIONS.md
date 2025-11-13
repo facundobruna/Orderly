@@ -35,19 +35,19 @@ Si prefieres instalar los servicios manualmente, asegúrate de que estén corrie
 Necesitas iniciar los 4 microservicios backend:
 
 ```bash
-# Terminal 1: Users API (puerto 8081)
+# Terminal 1: Users API (puerto 8080)
 cd users-api
 go run cmd/api/main.go
 
-# Terminal 2: Products API (puerto 8082)
+# Terminal 2: Products API (puerto 8081)
 cd products-api
 go run cmd/api/main.go
 
-# Terminal 3: Orders API (puerto 8083)
+# Terminal 3: Orders API (puerto 8082)
 cd orders-api
 go run cmd/api/main.go
 
-# Terminal 4: Payments API (puerto 8084)
+# Terminal 4: Payments API (puerto 8083)
 cd payments-api
 go run cmd/api/main.go
 ```
@@ -144,7 +144,7 @@ Este script creará:
 
 🌐 URLs para probar:
    • Frontend: http://localhost:3000/negocio/1
-   • API Productos: curl http://localhost:8082/productos?negocio_id=1
+   • API Productos: curl http://localhost:8081/productos?negocio_id=1
 ```
 
 ### Paso 2: Verificar Productos en la API
@@ -158,7 +158,7 @@ Verifica que los productos se hayan creado correctamente:
 O manualmente:
 
 ```bash
-curl "http://localhost:8082/productos?negocio_id=1" | jq
+curl "http://localhost:8081/productos?negocio_id=1" | jq
 ```
 
 **Salida esperada:** Un array JSON con 13 productos.
@@ -208,7 +208,7 @@ http://localhost:3000/negocio/1
 
 1. **Verifica que la API responda correctamente:**
    ```bash
-   curl "http://localhost:8082/productos?negocio_id=1"
+   curl "http://localhost:8081/productos?negocio_id=1"
    ```
 
 2. **Verifica los logs del Products API:**
@@ -271,7 +271,7 @@ Esto significa que la API no está devolviendo un array.
 
 1. Verifica la respuesta de la API:
    ```bash
-   curl "http://localhost:8082/productos?negocio_id=1"
+   curl "http://localhost:8081/productos?negocio_id=1"
    ```
 
 2. Si devuelve un objeto en vez de un array, hay un problema en el backend
@@ -294,10 +294,10 @@ docker compose logs mongodb-products
 docker compose down -v
 
 # Verificar que un puerto esté ocupado
-lsof -i :8082
+lsof -i :8081
 
 # Matar un proceso en un puerto específico
-kill -9 $(lsof -t -i :8082)
+kill -9 $(lsof -t -i :8081)
 ```
 
 ## 📊 Testing Adicional
@@ -307,7 +307,7 @@ kill -9 $(lsof -t -i :8082)
 ```bash
 # Obtener lista de mesas
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  "http://localhost:8081/negocios/1/mesas" | jq
+  "http://localhost:8080/negocios/1/mesas" | jq
 
 # Una mesa debería tener un QR code que contiene:
 # {
@@ -322,7 +322,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 
 ```bash
 # Crear una orden
-curl -X POST "http://localhost:8083/orders" \
+curl -X POST "http://localhost:8082/orders" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -343,7 +343,7 @@ curl -X POST "http://localhost:8083/orders" \
 
 ```bash
 # Crear preferencia de Mercado Pago
-curl -X POST "http://localhost:8084/payments/mercadopago/preference" \
+curl -X POST "http://localhost:8083/payments/mercadopago/preference" \
   -H "Content-Type: application/json" \
   -d '{
     "order_id": "ORDER_ID",

@@ -14,10 +14,10 @@ echo -e "${BLUE}╔════════════════════�
 echo ""
 
 # URLs de las APIs
-USERS_API="http://localhost:8081"
-PRODUCTS_API="http://localhost:8082"
-ORDERS_API="http://localhost:8083"
-PAYMENTS_API="http://localhost:8084"
+USERS_API="http://localhost:8080"
+PRODUCTS_API="http://localhost:8081"
+ORDERS_API="http://localhost:8082"
+PAYMENTS_API="http://localhost:8083"
 
 # Variables globales
 TOKEN=""
@@ -60,10 +60,12 @@ echo -e "${BLUE}👤 Creando usuario de prueba...${NC}"
 REGISTER_RESPONSE=$(curl -s -X POST "$USERS_API/register" \
   -H "Content-Type: application/json" \
   -d '{
+    "nombre": "Carlos",
+    "apellido": "Rodriguez",
     "email": "test@orderly.com",
+    "username": "carlitos",
     "password": "password123",
-    "nombre": "Restaurant Owner",
-    "telefono": "+543516789012"
+    "rol": "dueno"
   }')
 
 if echo "$REGISTER_RESPONSE" | grep -q "error"; then
@@ -78,7 +80,7 @@ echo -e "${BLUE}🔐 Haciendo login...${NC}"
 LOGIN_RESPONSE=$(curl -s -X POST "$USERS_API/login" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "test@orderly.com",
+    "username": "carlitos",
     "password": "password123"
   }')
 
@@ -106,8 +108,7 @@ NEGOCIO_RESPONSE=$(curl -s -X POST "$USERS_API/negocios" \
     "descripcion": "Las mejores pizzas artesanales de la ciudad",
     "direccion": "Av. Colón 1234, Córdoba",
     "telefono": "+543514567890",
-    "categoria": "Pizzería",
-    "horario": "Lun-Sab 19:00-00:00, Dom cerrado"
+    "sucursal": "principal"
   }')
 
 NEGOCIO_ID=$(echo "$NEGOCIO_RESPONSE" | grep -o '"id_negocio":[0-9]*' | cut -d':' -f2)
@@ -128,30 +129,30 @@ echo -e "${BLUE}🍕 Creando productos...${NC}"
 
 # Array de productos
 declare -a productos=(
-  '{"nombre":"Pizza Margarita","descripcion":"Salsa de tomate, mozzarella, albahaca fresca","precio":2500,"categoria":"Pizzas","disponible":true,"tags":["vegetariana","clásica"],"imagen_url":"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500"}'
-  '{"nombre":"Pizza Napolitana","descripcion":"Salsa de tomate, mozzarella, tomate en rodajas, orégano","precio":2700,"categoria":"Pizzas","disponible":true,"tags":["clásica"],"imagen_url":"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500"}'
-  '{"nombre":"Pizza Fugazzeta","descripcion":"Mozzarella, cebolla caramelizada, orégano","precio":2800,"categoria":"Pizzas","disponible":true,"tags":["clásica","argentina"],"imagen_url":"https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=500"}'
-  '{"nombre":"Pizza Calabresa","descripcion":"Salsa de tomate, mozzarella, calabresa, cebolla","precio":3200,"categoria":"Pizzas","disponible":true,"tags":["picante"],"imagen_url":"https://images.unsplash.com/photo-1628840042765-356cda07504e?w=500"}'
-  '{"nombre":"Pizza 4 Quesos","descripcion":"Mozzarella, roquefort, parmesano, provolone","precio":3500,"categoria":"Pizzas","disponible":true,"tags":["premium","vegetariana"],"imagen_url":"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500"}'
-  '{"nombre":"Empanadas de Carne","descripcion":"Masa casera rellena de carne cortada a cuchillo (x12)","precio":1800,"categoria":"Entradas","disponible":true,"tags":["entrada","argentina"],"imagen_url":"https://images.unsplash.com/photo-1599974789516-47e84ab885fa?w=500"}'
-  '{"nombre":"Empanadas de Jamón y Queso","descripcion":"Masa casera con jamón y queso (x12)","precio":1600,"categoria":"Entradas","disponible":true,"tags":["entrada"],"imagen_url":"https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=500"}'
-  '{"nombre":"Fainá","descripcion":"Pan de harina de garbanzo para acompañar","precio":800,"categoria":"Entradas","disponible":true,"tags":["acompañamiento","vegetariana"],"imagen_url":"https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500"}'
-  '{"nombre":"Coca Cola 1.5L","descripcion":"Bebida gaseosa Coca Cola 1.5 litros","precio":900,"categoria":"Bebidas","disponible":true,"tags":["bebida"],"imagen_url":"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=500"}'
-  '{"nombre":"Cerveza Quilmes 1L","descripcion":"Cerveza argentina en botella de 1 litro","precio":1200,"categoria":"Bebidas","disponible":true,"tags":["bebida","alcohol"],"imagen_url":"https://images.unsplash.com/photo-1608270586620-248524c67de9?w=500"}'
-  '{"nombre":"Agua Mineral 500ml","descripcion":"Agua mineral sin gas 500ml","precio":500,"categoria":"Bebidas","disponible":true,"tags":["bebida"],"imagen_url":"https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=500"}'
-  '{"nombre":"Flan Casero","descripcion":"Flan casero con dulce de leche y crema","precio":1200,"categoria":"Postres","disponible":true,"tags":["postre","dulce"],"imagen_url":"https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=500"}'
-  '{"nombre":"Tiramisú","descripcion":"Postre italiano con café y mascarpone","precio":1500,"categoria":"Postres","disponible":true,"tags":["postre","italiano"],"imagen_url":"https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=500"}'
+  '{"nombre":"Pizza Margarita","descripcion":"Salsa de tomate, mozzarella, albahaca fresca","precio_base":2500,"categoria":"Pizzas","disponible":true,"tags":["vegetariana","clásica"],"imagen_url":"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500"}'
+  '{"nombre":"Pizza Napolitana","descripcion":"Salsa de tomate, mozzarella, tomate en rodajas, orégano","precio_base":2700,"categoria":"Pizzas","disponible":true,"tags":["clásica"],"imagen_url":"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500"}'
+  '{"nombre":"Pizza Fugazzeta","descripcion":"Mozzarella, cebolla caramelizada, orégano","precio_base":2800,"categoria":"Pizzas","disponible":true,"tags":["clásica","argentina"],"imagen_url":"https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=500"}'
+  '{"nombre":"Pizza Calabresa","descripcion":"Salsa de tomate, mozzarella, calabresa, cebolla","precio_base":3200,"categoria":"Pizzas","disponible":true,"tags":["picante"],"imagen_url":"https://images.unsplash.com/photo-1628840042765-356cda07504e?w=500"}'
+  '{"nombre":"Pizza 4 Quesos","descripcion":"Mozzarella, roquefort, parmesano, provolone","precio_base":3500,"categoria":"Pizzas","disponible":true,"tags":["premium","vegetariana"],"imagen_url":"https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500"}'
+  '{"nombre":"Empanadas de Carne","descripcion":"Masa casera rellena de carne cortada a cuchillo (x12)","precio_base":1800,"categoria":"Entradas","disponible":true,"tags":["entrada","argentina"],"imagen_url":"https://images.unsplash.com/photo-1599974789516-47e84ab885fa?w=500"}'
+  '{"nombre":"Empanadas de Jamón y Queso","descripcion":"Masa casera con jamón y queso (x12)","precio_base":1600,"categoria":"Entradas","disponible":true,"tags":["entrada"],"imagen_url":"https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=500"}'
+  '{"nombre":"Fainá","descripcion":"Pan de harina de garbanzo para acompañar","precio_base":800,"categoria":"Entradas","disponible":true,"tags":["acompañamiento","vegetariana"],"imagen_url":"https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500"}'
+  '{"nombre":"Coca Cola 1.5L","descripcion":"Bebida gaseosa Coca Cola 1.5 litros","precio_base":900,"categoria":"Bebidas","disponible":true,"tags":["bebida"],"imagen_url":"https://images.unsplash.com/photo-1554866585-cd94860890b7?w=500"}'
+  '{"nombre":"Cerveza Quilmes 1L","descripcion":"Cerveza argentina en botella de 1 litro","precio_base":1200,"categoria":"Bebidas","disponible":true,"tags":["bebida","alcohol"],"imagen_url":"https://images.unsplash.com/photo-1608270586620-248524c67de9?w=500"}'
+  '{"nombre":"Agua Mineral 500ml","descripcion":"Agua mineral sin gas 500ml","precio_base":500,"categoria":"Bebidas","disponible":true,"tags":["bebida"],"imagen_url":"https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=500"}'
+  '{"nombre":"Flan Casero","descripcion":"Flan casero con dulce de leche y crema","precio_base":1200,"categoria":"Postres","disponible":true,"tags":["postre","dulce"],"imagen_url":"https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=500"}'
+  '{"nombre":"Tiramisú","descripcion":"Postre italiano con café y mascarpone","precio_base":1500,"categoria":"Postres","disponible":true,"tags":["postre","italiano"],"imagen_url":"https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=500"}'
 )
 
 PRODUCTOS_CREADOS=0
 for producto in "${productos[@]}"; do
-    # Agregar negocio_id al JSON
-    producto_con_negocio=$(echo "$producto" | sed "s/{/{\"negocio_id\":$NEGOCIO_ID,/")
+    # Agregar negocio_id y sucursal_id al JSON
+    producto_completo=$(echo "$producto" | sed "s/{/{\"negocio_id\":\"$NEGOCIO_ID\",\"sucursal_id\":\"principal\",/")
 
     RESPONSE=$(curl -s -X POST "$PRODUCTS_API/productos" \
       -H "Content-Type: application/json" \
       -H "Authorization: Bearer $TOKEN" \
-      -d "$producto_con_negocio")
+      -d "$producto_completo")
 
     if echo "$RESPONSE" | grep -q "id"; then
         PRODUCTOS_CREADOS=$((PRODUCTOS_CREADOS + 1))

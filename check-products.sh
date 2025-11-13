@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-PRODUCTS_API="http://localhost:8082"
+PRODUCTS_API="http://localhost:8081"
 
 if [ -z "$1" ]; then
     echo -e "${RED}❌ Error: Debes proporcionar el ID del negocio${NC}"
@@ -36,7 +36,7 @@ else
     echo -e "${GREEN}✅ Se encontraron $PRODUCTO_COUNT productos${NC}"
     echo ""
     echo -e "${BLUE}Productos:${NC}"
-    echo "$RESPONSE" | jq -r '.[] | "  • \(.nombre) - $\(.precio) (\(.categoria))"' 2>/dev/null || echo "$RESPONSE"
+    echo "$RESPONSE" | jq -r '.[] | "  • \(.nombre) - $\(.precio_base) (\(.categoria))"' 2>/dev/null || echo "$RESPONSE"
 fi
 
 echo ""
