@@ -2,6 +2,7 @@ package repository
 
 import (
 	"users-api/internal/dao"
+	"users-api/internal/domain"
 	"context"
 	"errors"
 	"fmt"
@@ -46,7 +47,7 @@ func NewMySQLUsersRepository(ctx context.Context, user, password, host, port, db
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	// Auto-migrar tablas
-	if err := db.AutoMigrate(&dao.Usuario{}, &dao.Negocio{}); err != nil {
+	if err := db.AutoMigrate(&dao.Usuario{}, &dao.Negocio{}, &domain.Mesa{}); err != nil {
 		log.Fatalf("Error en auto-migrate: %v", err)
 	}
 
