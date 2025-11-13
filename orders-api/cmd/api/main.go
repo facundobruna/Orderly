@@ -13,11 +13,20 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
 	cfg := config.Load()
 	ctx := context.Background()
+
+	// MongoDB Connection for Group Orders
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.Mongo.URI))
+	if err != nil {
+		log.Fatalf("Error connecting to MongoDB for group orders: %v", err)
+	}
+	db := mongoClient.Database(cfg.Mongo.DB)
 
 	// Repository
 	ordersRepo := repository.NewMongoOrdersRepository(
@@ -26,6 +35,7 @@ func main() {
 		cfg.Mongo.DB,
 		cfg.Mongo.Collection,
 	)
+	groupOrderRepo := repository.NewGroupOrderRepository(db)
 
 	// RabbitMQ
 	rabbitClient := clients.NewRabbitMQClient(
@@ -48,9 +58,11 @@ func main() {
 		productsClient,
 		rabbitClient,
 	)
+	groupOrderService := services.NewGroupOrderService(groupOrderRepo, ordersRepo)
 
 	// Controller
 	ordersController := controllers.NewOrdersController(ordersService)
+	groupOrderController := controllers.NewGroupOrderController(groupOrderService)
 
 	// Router
 	router := gin.Default()
@@ -70,6 +82,11 @@ func main() {
 		orders.GET("/:id", ordersController.GetByID)
 		orders.PUT("/:id/status", ordersController.UpdateStatus)
 		orders.DELETE("/:id", ordersController.Cancel)
+
+		// Group Orders (División de pagos)
+		orders.POST("/group", groupOrderController.CreateGroupOrder)
+		orders.GET("/group/:id", groupOrderController.GetGroupOrder)
+		orders.PUT("/group/:id/payment/:persona_id", groupOrderController.UpdateSubOrderPayment)
 	}
 
 	srv := &http.Server{

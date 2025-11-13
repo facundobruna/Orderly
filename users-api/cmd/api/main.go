@@ -34,17 +34,20 @@ func main() {
 	// Para esto, necesitamos exponer el DB o crear el repo diferente
 	// Por ahora, usaremos usersRepo como base para obtener la DB
 	negociosRepo := repository.NewNegociosRepository(usersRepo.GetDB())
+	mesasRepo := repository.NewMesaRepository(usersRepo.GetDB())
 
 	// 💼 Inicializar service de usuarios
 	usersService := services.NewUsersService(usersRepo)
 
 	// 💼 Inicializar service de negocios
 	negociosService := services.NewNegociosService(negociosRepo, usersRepo)
+	mesasService := services.NewMesaService(mesasRepo, negociosRepo)
 
 	// 🎮 Inicializar controllers
 	authController := controllers.NewAuthController(usersService)
 	usersController := controllers.NewUsersController(usersService)
 	negociosController := controllers.NewNegociosController(negociosService)
+	mesasController := controllers.NewMesaController(mesasService)
 
 	// 🌐 Configurar router HTTP con Gin
 	router := gin.Default()
@@ -88,6 +91,13 @@ func main() {
 			negociosProtected.GET("/my", negociosController.ListMyNegocios)                        // Mis negocios
 			negociosProtected.PUT("/:id", negociosController.Update)                               // Actualizar
 			negociosProtected.DELETE("/:id", negociosController.Delete)                            // Eliminar
+
+			// 🪑 Rutas de mesas (requieren autenticación)
+			negociosProtected.GET("/:negocio_id/mesas", mesasController.GetMesasByNegocio)            // Listar mesas
+			negociosProtected.POST("/:negocio_id/mesas", mesasController.CreateMesa)                  // Crear mesa
+			negociosProtected.GET("/:negocio_id/mesas/:mesa_id", mesasController.GetMesa)             // Ver mesa
+			negociosProtected.PUT("/:negocio_id/mesas/:mesa_id", mesasController.UpdateMesa)          // Actualizar mesa
+			negociosProtected.DELETE("/:negocio_id/mesas/:mesa_id", mesasController.DeleteMesa)       // Eliminar mesa
 		}
 	}
 
