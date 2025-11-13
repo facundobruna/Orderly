@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"clase05-solr/internal/domain"
 	"context"
 	"net/http"
+	"orders-api/internal/domain"
 	"strconv"
 	"strings"
 

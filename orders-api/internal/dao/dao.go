@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"clase05-solr/internal/domain"
+	"orders-api/internal/domain"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )

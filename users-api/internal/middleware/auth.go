@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"clase05-solr/internal/utils"
+	"users-api/internal/utils"
 	"net/http"
 	"strings"
 

@@ -1,15 +1,15 @@
 package main
 
 import (
-	"clase05-solr/internal/clients"
-	"clase05-solr/internal/config"
-	"clase05-solr/internal/controllers"
-	"clase05-solr/internal/middleware"
-	"clase05-solr/internal/repository"
-	"clase05-solr/internal/services"
 	"context"
 	"log"
 	"net/http"
+	"orders-api/internal/clients"
+	"orders-api/internal/config"
+	"orders-api/internal/controllers"
+	"orders-api/internal/middleware"
+	"orders-api/internal/repository"
+	"orders-api/internal/services"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -78,8 +78,8 @@ func main() {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	log.Println("🚀 Orders API listening on port " + cfg.Port)
-	log.Println("📊 Health check: http://localhost:" + cfg.Port + "/healthz")
+	log.Println(" Orders API listening on port " + cfg.Port)
+	log.Println(" Health check: http://localhost:" + cfg.Port + "/healthz")
 
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("server error: %v", err)

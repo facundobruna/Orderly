@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"clase05-solr/internal/domain"
+	"users-api/internal/domain"
 	"time"
 )
 

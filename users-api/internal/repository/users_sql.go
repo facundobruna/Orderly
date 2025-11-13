@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"clase05-solr/internal/dao"
+	"users-api/internal/dao"
 	"context"
 	"errors"
 	"fmt"

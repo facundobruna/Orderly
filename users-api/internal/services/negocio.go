@@ -1,8 +1,8 @@
 package services
 
 import (
-	"clase05-solr/internal/dao"
-	"clase05-solr/internal/domain"
+	"users-api/internal/dao"
+	"users-api/internal/domain"
 	"context"
 	"errors"
 )

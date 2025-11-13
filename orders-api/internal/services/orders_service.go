@@ -1,7 +1,7 @@
 package services
 
 import (
-	"clase05-solr/internal/domain"
+	"orders-api/internal/domain"
 	"context"
 	"errors"
 	"fmt"

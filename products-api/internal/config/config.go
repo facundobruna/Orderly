@@ -4,6 +4,7 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"strconv"
 )
 
 type Config struct {
@@ -12,6 +13,8 @@ type Config struct {
 	RabbitMQ    RabbitMQConfig
 	UsersAPI    UsersAPIConfig
 	ProductsAPI ProductsAPIConfig
+	Memcached   MemcachedConfig
+	Solr        SolrConfig
 }
 
 type MongoConfig struct {
@@ -36,11 +39,25 @@ type ProductsAPIConfig struct {
 	BaseURL string
 }
 
+type MemcachedConfig struct {
+	Host       string
+	Port       string
+	TTLSeconds int
+}
+
+type SolrConfig struct {
+	Host string
+	Port string
+	Core string
+}
+
 func Load() Config {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found or error loading .env file")
 	}
+
+	ttl, _ := strconv.Atoi(getEnv("MEMCACHED_TTL_SECONDS", "3600"))
 
 	return Config{
 		Port: getEnv("PORT", "8082"),
@@ -61,6 +78,16 @@ func Load() Config {
 		},
 		ProductsAPI: ProductsAPIConfig{
 			BaseURL: getEnv("PRODUCTS_API_URL", "http://localhost:8081"),
+		},
+		Memcached: MemcachedConfig{
+			Host:       getEnv("MEMCACHED_HOST", "localhost"),
+			Port:       getEnv("MEMCACHED_PORT", "11211"),
+			TTLSeconds: ttl,
+		},
+		Solr: SolrConfig{
+			Host: getEnv("SOLR_HOST", "localhost"),
+			Port: getEnv("SOLR_PORT", "8983"),
+			Core: getEnv("SOLR_CORE", "products"),
 		},
 	}
 }

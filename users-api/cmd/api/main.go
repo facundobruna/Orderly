@@ -1,11 +1,11 @@
 package main
 
 import (
-	"clase05-solr/internal/config"
-	"clase05-solr/internal/controllers"
-	"clase05-solr/internal/middleware"
-	"clase05-solr/internal/repository"
-	"clase05-solr/internal/services"
+	"users-api/internal/config"
+	"users-api/internal/controllers"
+	"users-api/internal/middleware"
+	"users-api/internal/repository"
+	"users-api/internal/services"
 	"context"
 	"log"
 	"net/http"

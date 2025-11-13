@@ -1,7 +1,7 @@
 package clients
 
 import (
-	"clase05-solr/internal/services"
+	"orders-api/internal/services"
 	"context"
 )
 

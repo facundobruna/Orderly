@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"clase05-solr/internal/domain"
-	"clase05-solr/internal/middleware"
+	"users-api/internal/domain"
+	"users-api/internal/middleware"
 	"context"
 	"net/http"
 	"strconv"

@@ -1,4 +1,4 @@
-module clase05-solr
+module orders-api
 
 go 1.22
 
