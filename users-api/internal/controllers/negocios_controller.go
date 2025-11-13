@@ -1,11 +1,10 @@
 package controllers
 
 import (
-	"clase05-solr/internal/domain"
-	"clase05-solr/internal/middleware"
 	"context"
 	"net/http"
 	"strconv"
+	"users-api/internal/domain"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,6 +17,7 @@ type NegociosService interface {
 	ListAllNegocios(ctx context.Context) ([]domain.Negocio, error)
 	UpdateNegocio(ctx context.Context, negocioID uint64, userID uint64, req domain.UpdateNegocioRequest) (domain.Negocio, error)
 	DeleteNegocio(ctx context.Context, negocioID uint64, userID uint64) error
+	ExistsNegocio(ctx context.Context, id uint64) (bool, error)
 }
 
 // NegociosController maneja las peticiones HTTP de negocios
@@ -249,5 +249,40 @@ func (c *NegociosController) Delete(ctx *gin.Context) {
 	// 4. Responder con éxito
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Negocio eliminado exitosamente",
+	})
+}
+
+// Exists maneja GET /negocios/:id/exists
+func (c *NegociosController) Exists(ctx *gin.Context) {
+	// 1. Obtener ID del parámetro
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error":  "ID inválido",
+			"exists": false,
+		})
+		return
+	}
+
+	// 2. Verificar existencia
+	exists, err := c.service.ExistsNegocio(ctx.Request.Context(), id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error":  "Error al verificar negocio",
+			"exists": false,
+		})
+		return
+	}
+
+	if !exists {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"exists": false,
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"exists": true,
 	})
 }

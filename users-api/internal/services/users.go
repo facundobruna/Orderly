@@ -1,13 +1,13 @@
 package services
 
 import (
-	"clase05-solr/internal/dao"
-	"clase05-solr/internal/domain"
-	"clase05-solr/internal/utils"
 	"context"
 	"errors"
 	"fmt"
 	"strings"
+	"users-api/internal/dao"
+	"users-api/internal/domain"
+	"users-api/internal/utils"
 )
 
 // UsersRepository define las operaciones de datos para usuarios

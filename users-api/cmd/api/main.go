@@ -1,12 +1,15 @@
 package main
 
 import (
-	"clase05-solr/internal/config"
-	"clase05-solr/internal/controllers"
-	"clase05-solr/internal/middleware"
-	"clase05-solr/internal/repository"
-	"clase05-solr/internal/services"
 	"context"
+	"log"
+	"net/http"
+	"time"
+	"users-api/internal/config"
+	"users-api/internal/controllers"
+	"users-api/internal/middle
+	"users-api/internal/config"
+	"users-api/internal/controllers"
 	"log"
 	"net/http"
 	"time"
@@ -76,8 +79,9 @@ func main() {
 	negocios := router.Group("/negocios")
 	{
 		// Rutas públicas
-		negocios.GET("", negociosController.ListAll)     // GET /negocios - listar todos
-		negocios.GET("/:id", negociosController.GetByID) // GET /negocios/:id - ver detalle
+		negocios.GET("", negociosController.ListAll)           // GET /negocios - listar todos
+		negocios.GET("/:id", negociosController.GetByID)       // GET /negocios/:id - ver detalle
+		negocios.GET("/:id/exists", negociosController.Exists) // GET /negocios/:id/exists - validar existencia
 
 		// Rutas protegidas (requieren autenticación)
 		negociosProtected := negocios.Group("")

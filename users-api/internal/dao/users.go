@@ -1,8 +1,8 @@
 package dao
 
 import (
-	"clase05-solr/internal/domain"
 	"time"
+	
 )
 
 type Usuario struct {

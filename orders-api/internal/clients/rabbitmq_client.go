@@ -1,7 +1,6 @@
 package clients
 
 import (
-	"clase05-solr/internal/services"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -40,10 +39,10 @@ func NewRabbitMQClient(user, password, queueName, host, port string) *RabbitMQCl
 	return &RabbitMQClient{connection: connection, channel: channel, queue: &queue}
 }
 
-func (r *RabbitMQClient) Publish(ctx context.Context, action string, itemID string) error {
+func (r *RabbitMQClient) Publish(ctx context.Context, action string, orderID string) error {
 	message := map[string]interface{}{
-		"action":  action,
-		"item_id": itemID,
+		"action":   action,
+		"order_id": orderID,
 	}
 
 	bytes, err := json.Marshal(message)
@@ -57,7 +56,7 @@ func (r *RabbitMQClient) Publish(ctx context.Context, action string, itemID stri
 		DeliveryMode:    amqp091.Transient,
 		MessageId:       uuid.New().String(),
 		Timestamp:       time.Now().UTC(),
-		AppId:           "items-api",
+		AppId:           "orders-api",
 		Body:            bytes,
 	}); err != nil {
 		return fmt.Errorf("error publishing message to RabbitMQ: %w", err)
@@ -65,7 +64,13 @@ func (r *RabbitMQClient) Publish(ctx context.Context, action string, itemID stri
 	return nil
 }
 
-func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Context, services.ItemEvent) error) error {
+// OrderEvent representa un evento de orden
+type OrderEvent struct {
+	Action  string `json:"action"`
+	OrderID string `json:"order_id"`
+}
+
+func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Context, OrderEvent) error) error {
 	// Configurar el consumer
 	msgs, err := r.channel.Consume(
 		r.queue.Name, // queue
@@ -91,7 +96,7 @@ func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Conte
 
 		case msg := <-msgs:
 			// Deserializar mensaje
-			var event services.ItemEvent
+			var event OrderEvent
 			if err := json.Unmarshal(msg.Body, &event); err != nil {
 				log.Printf("❌ Error unmarshalling message: %v", err)
 				continue

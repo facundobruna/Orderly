@@ -1,11 +1,11 @@
 package controllers
 
 import (
-	"clase05-solr/internal/domain"
-	"clase05-solr/internal/middleware"
 	"context"
 	"net/http"
 	"strconv"
+	"users-api/internal/domain"
+	"users-api/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
