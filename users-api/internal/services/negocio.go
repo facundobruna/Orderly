@@ -3,7 +3,8 @@ package services
 import (
 	"context"
 	"errors"
-	"
+	"users-api/internal/dao"
+	"users-api/internal/domain"
 )
 
 type negocioRepository interface {

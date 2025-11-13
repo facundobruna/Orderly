@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"orders-api/internal/services"
 )
 
 // ProductsAPIAdapter adapta ProductsAPIClient para implementar la interfaz del servicio

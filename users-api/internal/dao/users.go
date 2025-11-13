@@ -2,7 +2,7 @@ package dao
 
 import (
 	"time"
-	
+	"users-api/internal/domain"
 )
 
 type Usuario struct {

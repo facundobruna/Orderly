@@ -7,12 +7,9 @@ import (
 	"time"
 	"users-api/internal/config"
 	"users-api/internal/controllers"
-	"users-api/internal/middle
-	"users-api/internal/config"
-	"users-api/internal/controllers"
-	"log"
-	"net/http"
-	"time"
+	"users-api/internal/middleware"
+	"users-api/internal/repository"
+	"users-api/internal/services"
 
 	"github.com/gin-gonic/gin"
 )

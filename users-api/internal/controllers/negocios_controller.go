@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"users-api/internal/domain"
+	"users-api/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
