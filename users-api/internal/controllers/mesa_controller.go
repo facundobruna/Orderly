@@ -32,10 +32,10 @@ func NewMesaController(mesaService *services.MesaService) *MesaController {
 // @Failure 500 {object} map[string]string
 // @Router /negocios/{negocio_id}/mesas [post]
 func (c *MesaController) CreateMesa(ctx *gin.Context) {
-	negocioIDStr := ctx.Param("negocio_id")
+	negocioIDStr := ctx.Param("id")
 	negocioID, err := strconv.ParseUint(negocioIDStr, 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid negocio_id"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 
@@ -66,10 +66,10 @@ func (c *MesaController) CreateMesa(ctx *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /negocios/{negocio_id}/mesas [get]
 func (c *MesaController) GetMesasByNegocio(ctx *gin.Context) {
-	negocioIDStr := ctx.Param("negocio_id")
+	negocioIDStr := ctx.Param("id")
 	negocioID, err := strconv.ParseUint(negocioIDStr, 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid negocio_id"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 

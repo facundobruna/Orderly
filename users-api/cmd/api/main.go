@@ -93,11 +93,11 @@ func main() {
 			negociosProtected.DELETE("/:id", negociosController.Delete)                            // Eliminar
 
 			// 🪑 Rutas de mesas (requieren autenticación)
-			negociosProtected.GET("/:negocio_id/mesas", mesasController.GetMesasByNegocio)            // Listar mesas
-			negociosProtected.POST("/:negocio_id/mesas", mesasController.CreateMesa)                  // Crear mesa
-			negociosProtected.GET("/:negocio_id/mesas/:mesa_id", mesasController.GetMesa)             // Ver mesa
-			negociosProtected.PUT("/:negocio_id/mesas/:mesa_id", mesasController.UpdateMesa)          // Actualizar mesa
-			negociosProtected.DELETE("/:negocio_id/mesas/:mesa_id", mesasController.DeleteMesa)       // Eliminar mesa
+			negociosProtected.GET("/:id/mesas", mesasController.GetMesasByNegocio)            // Listar mesas
+			negociosProtected.POST("/:id/mesas", mesasController.CreateMesa)                  // Crear mesa
+			negociosProtected.GET("/:id/mesas/:mesa_id", mesasController.GetMesa)             // Ver mesa
+			negociosProtected.PUT("/:id/mesas/:mesa_id", mesasController.UpdateMesa)          // Actualizar mesa
+			negociosProtected.DELETE("/:id/mesas/:mesa_id", mesasController.DeleteMesa)       // Eliminar mesa
 		}
 	}
 
