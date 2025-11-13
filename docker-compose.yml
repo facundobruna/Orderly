@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # MySQL for users-api
+  mysql:
+    image: mysql:8.0
+    container_name: orderly-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: users
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # MongoDB for products-api
+  mongodb-products:
+    image: mongo:7.0
+    container_name: orderly-mongo-products
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-products-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # MongoDB for orders-api
+  mongodb-orders:
+    image: mongo:7.0
+    container_name: orderly-mongo-orders
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-orders-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: orderly-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Memcached
+  memcached:
+    image: memcached:1.6-alpine
+    container_name: orderly-memcached
+    ports:
+      - "11211:11211"
+    command: memcached -m 64
+
+  # Solr
+  solr:
+    image: solr:9.4
+    container_name: orderly-solr
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr-data:/var/solr
+    command:
+      - solr-precreate
+      - demo
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8983/solr/demo/admin/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mysql-data:
+  mongo-products-data:
+  mongo-orders-data:
+  rabbitmq-data:
+  solr-data:
