@@ -9,16 +9,27 @@ import (
 )
 
 type Config struct {
-	Port      string
-	Mongo     MongoConfig
-	Memcached MemcachedConfig
-	RabbitMQ  RabbitMQConfig
-	Solr      SolrConfig
+	Port        string
+	Mongo       MongoConfig
+	Memcached   MemcachedConfig
+	RabbitMQ    RabbitMQConfig
+	Solr        SolrConfig
+	UsersAPI    UsersAPIConfig
+	ProductsAPI ProductsAPIConfig
 }
 
 type MongoConfig struct {
-	URI string
-	DB  string
+	URI        string
+	DB         string
+	Collection string
+}
+
+type UsersAPIConfig struct {
+	BaseURL string
+}
+
+type ProductsAPIConfig struct {
+	BaseURL string
 }
 
 type MemcachedConfig struct {
@@ -54,8 +65,9 @@ func Load() Config {
 	return Config{
 		Port: getEnv("PORT", "8080"),
 		Mongo: MongoConfig{
-			URI: getEnv("MONGO_URI", "mongodb://localhost:27017"),
-			DB:  getEnv("MONGO_DB", "demo"),
+			URI:        getEnv("MONGO_URI", "mongodb://localhost:27017"),
+			DB:         getEnv("MONGO_DB", "demo"),
+			Collection: getEnv("MONGO_COLLECTION", "orders"),
 		},
 		Memcached: MemcachedConfig{
 			Host:       getEnv("MEMCACHED_HOST", "localhost"),
@@ -73,6 +85,12 @@ func Load() Config {
 			Host: getEnv("SOLR_HOST", "localhost"),
 			Port: getEnv("SOLR_PORT", "8983"),
 			Core: getEnv("SOLR_CORE", "demo"),
+		},
+		UsersAPI: UsersAPIConfig{
+			BaseURL: getEnv("USERS_API_URL", "http://localhost:8081"),
+		},
+		ProductsAPI: ProductsAPIConfig{
+			BaseURL: getEnv("PRODUCTS_API_URL", "http://localhost:8082"),
 		},
 	}
 }
