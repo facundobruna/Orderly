@@ -32,7 +32,7 @@ export default function NegocioPage() {
   });
 
   // Fetch productos
-  const { data: productos = [], isLoading } = useQuery({
+  const { data: productos, isLoading, error } = useQuery({
     queryKey: ["productos", negocioId, selectedCategoria],
     queryFn: () =>
       productsApi.getProducts({
@@ -42,13 +42,16 @@ export default function NegocioPage() {
       }),
   });
 
+  // Ensure productos is always an array
+  const productosArray = Array.isArray(productos) ? productos : [];
+
   // Get unique categories
   const categorias = Array.from(
-    new Set(productos.map((p) => p.categoria))
+    new Set(productosArray.map((p) => p.categoria))
   ).filter(Boolean);
 
   // Filter products by search query
-  const filteredProductos = productos.filter((producto) => {
+  const filteredProductos = productosArray.filter((producto) => {
     const matchesSearch =
       searchQuery === "" ||
       producto.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -147,18 +150,28 @@ export default function NegocioPage() {
           )}
         </div>
 
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12 bg-white rounded-lg">
+            <p className="text-red-500 mb-2">Error al cargar productos</p>
+            <p className="text-sm text-muted-foreground">
+              {error instanceof Error ? error.message : "Por favor, intenta de nuevo"}
+            </p>
+          </div>
+        )}
+
         {/* Products Grid */}
-        {isLoading ? (
+        {!error && isLoading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Cargando productos...</p>
           </div>
-        ) : filteredProductos.length === 0 ? (
+        ) : !error && filteredProductos.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg">
             <p className="text-muted-foreground">
               No se encontraron productos
             </p>
           </div>
-        ) : (
+        ) : !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProductos.map((producto) => (
               <ProductCard
