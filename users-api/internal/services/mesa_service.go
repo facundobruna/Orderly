@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -10,10 +11,10 @@ import (
 
 type MesaService struct {
 	mesaRepo    *repository.MesaRepository
-	negocioRepo *repository.NegocioRepository
+	negocioRepo *repository.NegociosRepository
 }
 
-func NewMesaService(mesaRepo *repository.MesaRepository, negocioRepo *repository.NegocioRepository) *MesaService {
+func NewMesaService(mesaRepo *repository.MesaRepository, negocioRepo *repository.NegociosRepository) *MesaService {
 	return &MesaService{
 		mesaRepo:    mesaRepo,
 		negocioRepo: negocioRepo,
@@ -23,7 +24,7 @@ func NewMesaService(mesaRepo *repository.MesaRepository, negocioRepo *repository
 // CreateMesa crea una nueva mesa y genera su código QR
 func (s *MesaService) CreateMesa(negocioID uint64, req *domain.CreateMesaRequest) (*domain.MesaResponse, error) {
 	// Verificar que el negocio existe
-	_, err := s.negocioRepo.GetByID(negocioID)
+	_, err := s.negocioRepo.GetnegocioByID(context.Background(), negocioID)
 	if err != nil {
 		return nil, fmt.Errorf("negocio not found: %w", err)
 	}

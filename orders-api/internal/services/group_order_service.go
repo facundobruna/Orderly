@@ -11,12 +11,12 @@ import (
 
 type GroupOrderService struct {
 	groupOrderRepo *repository.GroupOrderRepository
-	orderRepo      *repository.OrderRepository
+	orderRepo      *repository.MongoOrdersRepository
 }
 
 func NewGroupOrderService(
 	groupOrderRepo *repository.GroupOrderRepository,
-	orderRepo *repository.OrderRepository,
+	orderRepo *repository.MongoOrdersRepository,
 ) *GroupOrderService {
 	return &GroupOrderService{
 		groupOrderRepo: groupOrderRepo,
