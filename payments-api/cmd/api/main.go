@@ -31,7 +31,7 @@ func main() {
 	router.Use(middleware.CORSMiddleware())
 
 	// Health check
-	router.GET("/health", func(c *gin.Context) {
+	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "payments-api"})
 	})
 
