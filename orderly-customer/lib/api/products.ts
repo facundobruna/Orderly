@@ -7,13 +7,21 @@ import {
   ProductFilters,
 } from "@/types";
 
+interface PaginatedResponse<T> {
+  page: number;
+  limit: number;
+  total: number;
+  results: T[];
+}
+
 export const productsApi = {
   // Product CRUD
   async getProducts(filters?: ProductFilters): Promise<Producto[]> {
-    const response = await productsClient.get<Producto[]>("/products", {
+    const response = await productsClient.get<PaginatedResponse<Producto>>("/products", {
       params: filters,
     });
-    return response.data;
+    // Extract the results array from the paginated response
+    return response.data.results || [];
   },
 
   async getProductById(id: string): Promise<Producto> {
@@ -62,6 +70,7 @@ export const productsApi = {
     const response = await productsClient.get<Producto[]>("/products/search", {
       params,
     });
-    return response.data;
+    // Search endpoint returns array directly, not paginated
+    return response.data || [];
   },
 };
