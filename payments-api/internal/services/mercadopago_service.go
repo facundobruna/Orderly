@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"payments-api/internal/domain"
+	"time"
 
 	"github.com/mercadopago/sdk-go/pkg/config"
 	"github.com/mercadopago/sdk-go/pkg/preference"
@@ -12,8 +13,8 @@ import (
 
 type MercadoPagoService struct {
 	accessToken string
-	client      *preference.Client
-	paymentClient *payment.Client
+	client      preference.Client
+	paymentClient payment.Client
 }
 
 func NewMercadoPagoService(accessToken string) *MercadoPagoService {
@@ -78,7 +79,7 @@ func (s *MercadoPagoService) CreatePreference(req *domain.CreatePreferenceReques
 
 // GetPayment - Obtiene información de un pago
 func (s *MercadoPagoService) GetPayment(paymentID int64) (*payment.Response, error) {
-	pay, err := s.paymentClient.Get(context.Background(), paymentID)
+	pay, err := s.paymentClient.Get(context.Background(), int(paymentID))
 	if err != nil {
 		return nil, fmt.Errorf("error getting payment: %w", err)
 	}
@@ -102,6 +103,11 @@ func (s *MercadoPagoService) GetPaymentStatus(paymentID int64) (*domain.PaymentS
 		status = domain.PaymentStatusCancelled
 	}
 
+	var paymentDate *time.Time
+	if !pay.DateApproved.IsZero() {
+		paymentDate = &pay.DateApproved
+	}
+
 	return &domain.PaymentStatusResponse{
 		PaymentID:     fmt.Sprintf("%d", pay.ID),
 		Status:        status,
@@ -109,6 +115,6 @@ func (s *MercadoPagoService) GetPaymentStatus(paymentID int64) (*domain.PaymentS
 		Amount:        pay.TransactionAmount,
 		OrderID:       pay.ExternalReference,
 		PaymentMethod: domain.PaymentMethodMercadoPago,
-		PaymentDate:   pay.DateApproved,
+		PaymentDate:   paymentDate,
 	}, nil
 }
