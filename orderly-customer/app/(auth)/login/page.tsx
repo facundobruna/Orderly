@@ -41,7 +41,13 @@ export default function LoginPage() {
     try {
       const response = await authApi.login(data);
       setAuth(response.user, response.token);
-      router.push("/");
+
+      // Redirect based on user role
+      if (response.user.rol === "dueno") {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
     } catch (err: any) {
       setError(
         err.response?.data?.error || "Error al iniciar sesión. Verifica tus credenciales."

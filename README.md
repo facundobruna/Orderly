@@ -8,12 +8,15 @@ Orderly es un sistema integral que permite a los restaurantes gestionar sus nego
 
 ## ✨ Características Principales
 
-### Para Restaurantes (Dueños)
-- ✅ Gestión de negocios y sucursales
-- ✅ Administración de productos con variantes y modificadores
-- ✅ Gestión de mesas con códigos QR únicos
-- ✅ Dashboard de órdenes en tiempo real
-- ✅ Integración con Mercado Pago para pagos
+### Para Restaurantes (Dueños) - Panel de Administración
+- ✅ **Panel de administración completo** en `/admin`
+- ✅ Dashboard con estadísticas en tiempo real
+- ✅ Gestión de negocios y sucursales (CRUD completo)
+- ✅ Administración de productos con variantes y modificadores (CRUD completo)
+- ✅ Gestión de mesas con códigos QR únicos (CRUD completo)
+- ✅ Vista de órdenes en tiempo real para cocina/administración
+- ✅ Actualización de estados de órdenes (pendiente → preparando → listo → entregado)
+- ✅ Interfaz moderna y responsiva con navegación lateral
 
 ### Para Clientes
 - ✅ Menú digital accesible por QR
@@ -113,10 +116,15 @@ Para agregar datos de ejemplo (usuario, negocio, productos):
 ```
 
 Esto creará:
-- Usuario de prueba: `carlitos` / `password123`
+- **Usuario administrador**: `carlitos` / `password123` (rol: dueno)
 - Negocio: "La Pizzería de Carlitos"
 - 13 productos (pizzas, bebidas, entradas, postres)
 - 10 mesas con códigos QR
+
+**Para acceder al panel de administración:**
+1. Ir a `http://localhost:3000/login`
+2. Iniciar sesión con `carlitos` / `password123`
+3. Serás redirigido automáticamente a `/admin`
 
 ## 📖 Documentación
 
@@ -231,18 +239,36 @@ POST   /payments/transfer/confirm        - Confirmar transferencia
 
 ## 🎨 Frontend - Páginas
 
+### Páginas Públicas y de Cliente
 ```
 /                          - Home
 /register                  - Registro de usuario
-/login                     - Login
-/negocio/:id               - Menú del negocio (página principal para clientes)
+/login                     - Login (redirige a /admin si es dueño)
+/negocio/:id               - Menú del negocio
 /cart                      - Carrito de compras
 /checkout                  - Finalizar compra
-/orders                    - Mis órdenes
-/admin/dashboard           - Dashboard del dueño
-/admin/productos           - Gestión de productos
-/admin/mesas               - Gestión de mesas
+/orden/:id                 - Detalle de orden
 ```
+
+### Panel de Administración (Rol: dueno)
+```
+/admin                     - Dashboard con estadísticas
+/admin/negocios            - Gestión de negocios (CRUD)
+/admin/negocios/nuevo      - Crear nuevo negocio
+/admin/negocios/:id        - Editar negocio
+/admin/productos           - Gestión de productos (CRUD)
+/admin/productos/nuevo     - Crear nuevo producto (con variantes y modificadores)
+/admin/mesas               - Gestión de mesas (CRUD)
+/admin/ordenes             - Vista de órdenes en tiempo real (cocina/admin)
+```
+
+### Funcionalidades del Panel de Admin
+- 📊 Dashboard con estadísticas de negocios, órdenes e ingresos
+- 🏪 CRUD completo de negocios con información detallada
+- 📦 CRUD completo de productos con soporte para variantes y modificadores
+- 🪑 CRUD completo de mesas con códigos QR
+- 📋 Vista en tiempo real de órdenes con actualización de estados
+- 🔐 Protección de rutas basada en roles (solo usuarios con rol "dueno")
 
 ## 🧪 Testing
 

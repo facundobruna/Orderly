@@ -30,3 +30,22 @@ export interface CreateNegocioRequest {
   telefono: string;
   sucursal: string;
 }
+
+export interface UpdateNegocioRequest {
+  nombre?: string;
+  descripcion?: string;
+  direccion?: string;
+  telefono?: string;
+  sucursal?: string;
+  activo?: boolean;
+}
+
+export interface CreateMesaRequest {
+  numero: string;
+  sucursal_id: string;
+}
+
+export interface UpdateMesaRequest {
+  numero?: string;
+  activo?: boolean;
+}
