@@ -111,9 +111,17 @@ NEGOCIO_RESPONSE=$(curl -s -X POST "$USERS_API/negocios" \
     "sucursal": "principal"
   }')
 
-NEGOCIO_ID=$(echo "$NEGOCIO_RESPONSE" | grep -o '"id_negocio":[0-9]*' | cut -d':' -f2)
+# Extraer el ID del negocio (puede ser "id" o "id_negocio" dependiendo de la respuesta)
+NEGOCIO_ID=$(echo "$NEGOCIO_RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
 
 if [ -z "$NEGOCIO_ID" ]; then
+    echo -e "${RED}❌ Error al crear negocio${NC}"
+    echo "$NEGOCIO_RESPONSE"
+    exit 1
+fi
+
+# Verificar que la creación fue exitosa
+if echo "$NEGOCIO_RESPONSE" | grep -q "error"; then
     echo -e "${RED}❌ Error al crear negocio${NC}"
     echo "$NEGOCIO_RESPONSE"
     exit 1
@@ -180,10 +188,12 @@ for mesa_num in {1..10}; do
         \"sucursal_id\": \"principal\"
       }")
 
-    if echo "$MESA_RESPONSE" | grep -q "id_mesa"; then
+    # Verificar si la creación fue exitosa (buscar "id" en la respuesta y que no haya "error")
+    if echo "$MESA_RESPONSE" | grep -q '"id"' && ! echo "$MESA_RESPONSE" | grep -q '"error"'; then
         echo -e "${GREEN}  ✓ Mesa $mesa_num${NC}"
     else
         echo -e "${RED}  ✗ Error creando Mesa $mesa_num${NC}"
+        echo "  Response: $MESA_RESPONSE"
     fi
 done
 
