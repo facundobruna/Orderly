@@ -179,8 +179,8 @@ npm run dev
 ### Users API (Port 8080)
 
 ```
-POST   /register                    - Registrar usuario
-POST   /login                       - Login
+POST   /auth/register               - Registrar usuario
+POST   /auth/login                  - Login
 GET    /users/me                    - Perfil del usuario
 GET    /users/:id                   - Obtener usuario
 POST   /negocios                    - Crear negocio

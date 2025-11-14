@@ -25,7 +25,7 @@ Guía completa para probar el sistema Orderly usando Postman.
 
 ### Endpoint
 ```
-POST http://localhost:8080/register
+POST http://localhost:8080/auth/register
 ```
 
 ### Headers
@@ -70,7 +70,7 @@ Content-Type: application/json
 
 ### Endpoint
 ```
-POST http://localhost:8080/login
+POST http://localhost:8080/auth/login
 ```
 
 ### Headers

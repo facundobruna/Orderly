@@ -57,7 +57,7 @@ echo ""
 
 # 1. Registrar un usuario
 echo -e "${BLUE}👤 Creando usuario de prueba...${NC}"
-REGISTER_RESPONSE=$(curl -s -X POST "$USERS_API/register" \
+REGISTER_RESPONSE=$(curl -s -X POST "$USERS_API/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "nombre": "Carlos",
@@ -77,7 +77,7 @@ echo ""
 
 # 2. Login
 echo -e "${BLUE}🔐 Haciendo login...${NC}"
-LOGIN_RESPONSE=$(curl -s -X POST "$USERS_API/login" \
+LOGIN_RESPONSE=$(curl -s -X POST "$USERS_API/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "carlitos",
