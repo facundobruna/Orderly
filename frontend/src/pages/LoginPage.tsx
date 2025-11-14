@@ -1,10 +1,12 @@
 import { FormEvent, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
 import AppHeader from "../components/AppHeader";
 
 export default function LoginPage() {
-    const { login, loading } = useAuth();
+    const { login, loading, user } = useAuth();
+    const { showSuccess, showError } = useNotification();
     const navigate = useNavigate();
     const location = useLocation() as any;
 
@@ -20,9 +22,14 @@ export default function LoginPage() {
 
         try {
             await login({ username, password });
-            navigate(from, { replace: true });
+            showSuccess(`Bienvenido de nuevo!`);
+            setTimeout(() => {
+                navigate(from, { replace: true });
+            }, 800);
         } catch (err: any) {
-            setError(err?.message ?? "Error iniciando sesión");
+            const errorMsg = err?.message ?? "Error iniciando sesión";
+            setError(errorMsg);
+            showError(errorMsg);
         }
     };
 

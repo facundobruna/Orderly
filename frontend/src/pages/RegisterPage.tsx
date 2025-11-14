@@ -2,11 +2,13 @@
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
 import type { Rol } from "../types/auth";
 import AppHeader from "../components/AppHeader";
 
 export default function RegisterPage() {
     const { register, loading } = useAuth();
+    const { showSuccess, showError } = useNotification();
     const navigate = useNavigate();
 
     const [form, setForm] = useState({
@@ -33,9 +35,14 @@ export default function RegisterPage() {
 
         try {
             await register(form);
-            navigate("/negocio/1/1", { replace: true });
+            showSuccess(`Cuenta creada exitosamente! Bienvenido ${form.nombre}!`);
+            setTimeout(() => {
+                navigate("/negocio/1/1", { replace: true });
+            }, 1000);
         } catch (err: any) {
-            setError(err?.message ?? "Error registrando usuario");
+            const errorMsg = err?.message ?? "Error registrando usuario";
+            setError(errorMsg);
+            showError(errorMsg);
         }
     };
 
@@ -102,14 +109,6 @@ export default function RegisterPage() {
                             required
                             minLength={8}
                         />
-                    </div>
-
-                    <div className="form-field">
-                        <label>Rol</label>
-                        <select name="rol" value={form.rol} onChange={handleChange}>
-                            <option value="cliente">Cliente</option>
-                            <option value="dueno">Dueño</option>
-                        </select>
                     </div>
 
                     {error && <p className="text-error">{error}</p>}

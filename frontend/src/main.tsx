@@ -7,6 +7,7 @@ import { RouterProvider } from "react-router-dom";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import { router } from "./router";
 
 const root = document.getElementById("root");
@@ -17,10 +18,12 @@ if (!root) {
 
 ReactDOM.createRoot(root).render(
     <React.StrictMode>
-        <AuthProvider>
-            <CartProvider>
-                <RouterProvider router={router} />
-            </CartProvider>
-        </AuthProvider>
+        <NotificationProvider>
+            <AuthProvider>
+                <CartProvider>
+                    <RouterProvider router={router} />
+                </CartProvider>
+            </AuthProvider>
+        </NotificationProvider>
     </React.StrictMode>
 );

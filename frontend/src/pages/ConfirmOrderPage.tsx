@@ -1,15 +1,11 @@
 // src/pages/ConfirmOrderPage.tsx
+import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { createOrder } from "../api/ordersApi";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
 import AppHeader from "../components/AppHeader";
-
-type CartItem = {
-    id: string;
-    nombre: string;
-    cantidad: number;
-    precio_unitario: number;
-};
+import type { CartItem } from "../types/cart";
 
 type LocationState = {
     items: CartItem[];
@@ -25,6 +21,11 @@ export default function ConfirmOrderPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { user } = useAuth();
+    const { showSuccess, showError } = useNotification();
+
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [observaciones, setObservaciones] = useState("");
 
     const state = location.state as LocationState | null;
 
@@ -70,6 +71,9 @@ export default function ConfirmOrderPage() {
             : `/negocio/${negocioId}`;
 
     const handleConfirm = async () => {
+        setError(null);
+        setLoading(true);
+
         try {
             const usuarioID = user.id.toString();
 
@@ -78,7 +82,7 @@ export default function ConfirmOrderPage() {
                 sucursal_id: sucursalId ?? "1",
                 usuario_id: usuarioID,
                 mesa: "online",
-                observaciones: "",
+                observaciones: observaciones.trim(),
                 items: items.map((it) => ({
                     producto_id: it.id,
                     cantidad: it.cantidad,
@@ -93,20 +97,28 @@ export default function ConfirmOrderPage() {
                 created?.id ??
                 "";
 
+            showSuccess("Pedido creado exitosamente!");
+
             const successPath =
                 sucursalId != null
                     ? `/negocio/${negocioId}/${sucursalId}/confirmado`
                     : `/negocio/${negocioId}/confirmado`;
 
-            navigate(successPath, {
-                state: {
-                    orderId,
-                    items,
-                    total,
-                },
-            });
+            setTimeout(() => {
+                navigate(successPath, {
+                    state: {
+                        orderId,
+                        items,
+                        total,
+                    },
+                });
+            }, 500);
         } catch (e: any) {
-            alert(e?.message ?? "Error creando orden");
+            const errorMsg = e?.message ?? "Error creando orden";
+            setError(errorMsg);
+            showError(errorMsg);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -117,11 +129,34 @@ export default function ConfirmOrderPage() {
 
             <h2>Resumen</h2>
             <div className="card" style={{ marginTop: "1rem" }}>
-                <ul>
-                    {items.map((it) => (
-                        <li key={it.id}>
-                            {it.cantidad} x {it.nombre} — $
-                            {it.precio_unitario.toFixed(2)} c/u
+                <ul style={{ listStyle: "none", padding: 0 }}>
+                    {items.map((it, idx) => (
+                        <li
+                            key={idx}
+                            style={{
+                                padding: "0.75rem 0",
+                                borderBottom: idx < items.length - 1 ? "1px solid #eee" : "none",
+                            }}
+                        >
+                            <div>
+                                <b>
+                                    {it.cantidad} x {it.nombre}
+                                </b>
+                            </div>
+                            {it.variantes && it.variantes.length > 0 && (
+                                <div style={{ fontSize: "0.85rem", color: "#666", marginTop: "0.25rem" }}>
+                                    Variantes: {it.variantes.map((v) => v.nombre).join(", ")}
+                                </div>
+                            )}
+                            {it.modificadores && it.modificadores.length > 0 && (
+                                <div style={{ fontSize: "0.85rem", color: "#666", marginTop: "0.25rem" }}>
+                                    Modificadores: {it.modificadores.map((m) => m.nombre).join(", ")}
+                                </div>
+                            )}
+                            <div style={{ marginTop: "0.25rem", fontSize: "0.9rem" }}>
+                                ${it.precio_total.toFixed(2)} c/u ={" "}
+                                <b>${(it.precio_total * it.cantidad).toFixed(2)}</b>
+                            </div>
                         </li>
                     ))}
                 </ul>
@@ -131,13 +166,48 @@ export default function ConfirmOrderPage() {
                 </p>
             </div>
 
+            {/* Campo de observaciones */}
+            <div style={{ marginTop: "1.5rem" }}>
+                <h3>Observaciones (opcional)</h3>
+                <textarea
+                    value={observaciones}
+                    onChange={(e) => setObservaciones(e.target.value)}
+                    placeholder="Ej: Sin cebolla, extra queso, etc..."
+                    rows={3}
+                    style={{
+                        width: "100%",
+                        padding: "0.75rem",
+                        borderRadius: "12px",
+                        border: "1px solid #d9d6ff",
+                        fontSize: "0.95rem",
+                        fontFamily: "inherit",
+                        resize: "vertical",
+                    }}
+                    disabled={loading}
+                />
+            </div>
+
+            {error && (
+                <p className="text-error" style={{ marginTop: "1rem" }}>
+                    {error}
+                </p>
+            )}
+
             <div className="cart-footer" style={{ marginTop: "1.5rem" }}>
-                <button className="btn-secondary" onClick={() => navigate(backUrl)}>
+                <button
+                    className="btn-secondary"
+                    onClick={() => navigate(backUrl)}
+                    disabled={loading}
+                >
                     Volver y editar
                 </button>
 
-                <button className="btn-primary" onClick={handleConfirm}>
-                    Confirmar pedido
+                <button
+                    className="btn-primary"
+                    onClick={handleConfirm}
+                    disabled={loading}
+                >
+                    {loading ? "Creando pedido..." : "Confirmar pedido"}
                 </button>
             </div>
         </div>
