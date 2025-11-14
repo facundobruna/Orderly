@@ -30,9 +30,10 @@ export default function ProductosPage() {
   const loadNegocios = async () => {
     try {
       const data = await negociosApi.getMy();
-      setNegocios(data);
-      if (data.length > 0) {
-        setSelectedNegocio(data[0].id_negocio);
+      const negociosArray = Array.isArray(data) ? data : [];
+      setNegocios(negociosArray);
+      if (negociosArray.length > 0) {
+        setSelectedNegocio(negociosArray[0].id_negocio);
       }
     } catch (error) {
       console.error("Error loading negocios:", error);
@@ -45,7 +46,8 @@ export default function ProductosPage() {
     try {
       setIsLoading(true);
       const data = await productsApi.getProducts({ negocio_id: selectedNegocio });
-      setProductos(data);
+      const productosArray = Array.isArray(data) ? data : [];
+      setProductos(productosArray);
     } catch (error) {
       console.error("Error loading productos:", error);
     } finally {

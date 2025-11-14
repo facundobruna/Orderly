@@ -46,9 +46,10 @@ export default function OrdenesPage() {
   const loadNegocios = async () => {
     try {
       const data = await negociosApi.getMy();
-      setNegocios(data);
-      if (data.length > 0) {
-        setSelectedNegocio(data[0].id_negocio);
+      const negociosArray = Array.isArray(data) ? data : [];
+      setNegocios(negociosArray);
+      if (negociosArray.length > 0) {
+        setSelectedNegocio(negociosArray[0].id_negocio);
       }
     } catch (error) {
       console.error("Error loading negocios:", error);
@@ -61,7 +62,7 @@ export default function OrdenesPage() {
     try {
       setIsLoading(true);
       const response = await ordersApi.getOrders({ negocio_id: String(selectedNegocio) });
-      let orders = response.results || [];
+      let orders = Array.isArray(response?.results) ? response.results : [];
 
       // Filter based on selection
       if (filter === "activas") {

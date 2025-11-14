@@ -32,23 +32,24 @@ export default function AdminDashboard() {
     try {
       setIsLoading(true);
 
-      // Obtener negocios
-      const negocios = await negociosApi.getMy();
+      // Obtener negocios - ensure it's an array
+      const negociosData = await negociosApi.getMy();
+      const negocios = Array.isArray(negociosData) ? negociosData : [];
 
-      // Obtener órdenes
+      // Obtener órdenes - ensure results is an array
       const ordersResponse = await ordersApi.getOrders({});
-      const ordenes = ordersResponse.results || [];
+      const ordenes = Array.isArray(ordersResponse?.results) ? ordersResponse.results : [];
 
-      // Calcular órdenes de hoy
+      // Calcular órdenes de hoy - validate creado_en is a string
       const hoy = new Date().toISOString().split('T')[0];
       const ordenesHoy = ordenes.filter(o =>
-        o.creado_en.startsWith(hoy)
+        typeof o.creado_en === 'string' && o.creado_en.startsWith(hoy)
       ).length;
 
-      // Calcular ingresos del mes
+      // Calcular ingresos del mes - validate creado_en exists
       const mesActual = new Date().getMonth();
       const ingresosMes = ordenes
-        .filter(o => new Date(o.creado_en).getMonth() === mesActual)
+        .filter(o => o.creado_en && new Date(o.creado_en).getMonth() === mesActual)
         .reduce((sum, o) => sum + (o.total || 0), 0);
 
       setStats({

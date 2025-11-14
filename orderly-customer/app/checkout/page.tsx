@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/shared/Header";
 import { PaymentSelector } from "@/components/checkout/PaymentSelector";
@@ -36,8 +36,15 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Redirect to cart if empty - use useEffect to avoid updating Router during render
+  useEffect(() => {
+    if (items.length === 0) {
+      router.push("/cart");
+    }
+  }, [items.length, router]);
+
+  // Don't render if cart is empty
   if (items.length === 0) {
-    router.push("/cart");
     return null;
   }
 
