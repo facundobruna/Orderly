@@ -29,35 +29,35 @@ type UsersService struct {
 	repo UsersRepository
 }
 
-// Register registra un nuevo usuario
-func (s *UsersService) Register(ctx context.Context, req domain.RegisterRequest) (domain.Usuario, error) {
+// Register registra un nuevo usuario y retorna un JWT
+func (s *UsersService) Register(ctx context.Context, req domain.RegisterRequest) (domain.LoginResponse, error) {
 	// 1. Validar datos
 	if err := s.validateRegisterRequest(req); err != nil {
-		return domain.Usuario{}, err
+		return domain.LoginResponse{}, err
 	}
 
 	// 2. Verificar que username no esté en uso
 	usernameExists, err := s.repo.CheckUsernameExists(ctx, req.Username)
 	if err != nil {
-		return domain.Usuario{}, err
+		return domain.LoginResponse{}, err
 	}
 	if usernameExists {
-		return domain.Usuario{}, errors.New("el username ya está en uso")
+		return domain.LoginResponse{}, errors.New("el username ya está en uso")
 	}
 
 	// 3. Verificar que email no esté en uso
 	emailExists, err := s.repo.CheckEmailExists(ctx, req.Email)
 	if err != nil {
-		return domain.Usuario{}, err
+		return domain.LoginResponse{}, err
 	}
 	if emailExists {
-		return domain.Usuario{}, errors.New("el email ya está registrado")
+		return domain.LoginResponse{}, errors.New("el email ya está registrado")
 	}
 
 	// 4. Hashear password
 	passwordHash, err := utils.HashPassword(req.Password)
 	if err != nil {
-		return domain.Usuario{}, errors.New("error al procesar la contraseña")
+		return domain.LoginResponse{}, errors.New("error al procesar la contraseña")
 	}
 
 	// 5. Crear usuario en DB
@@ -73,11 +73,20 @@ func (s *UsersService) Register(ctx context.Context, req domain.RegisterRequest)
 
 	createdUser, err := s.repo.CreateUser(ctx, userDAO)
 	if err != nil {
-		return domain.Usuario{}, err
+		return domain.LoginResponse{}, err
 	}
 
-	// 6. Convertir a domain y retornar
-	return createdUser.ToDomain(), nil
+	// 6. Generar token JWT para el usuario recién creado
+	token, err := utils.GenerateToken(createdUser.IdUsuario, createdUser.Username, createdUser.Rol)
+	if err != nil {
+		return domain.LoginResponse{}, errors.New("error al generar token de autenticación")
+	}
+
+	// 7. Retornar token y usuario
+	return domain.LoginResponse{
+		Token: token,
+		User:  createdUser.ToDomain(),
+	}, nil
 }
 
 // Login autentica un usuario y retorna un JWT
