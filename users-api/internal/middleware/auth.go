@@ -11,7 +11,6 @@ import (
 // AuthMiddleware valida el JWT token y extrae los claims
 func AuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// 1. Obtener el header Authorization
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -21,7 +20,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 2. Validar formato "Bearer <token>"
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -33,7 +31,6 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		// 3. Validar el token
 		claims, err := utils.ValidateToken(tokenString)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -44,12 +41,10 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 4. Guardar claims en el contexto para uso posterior
 		ctx.Set("user_id", claims.UserID)
 		ctx.Set("username", claims.Username)
 		ctx.Set("rol", claims.Rol)
 
-		// 5. Continuar con el siguiente handler
 		ctx.Next()
 	}
 }

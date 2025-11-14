@@ -135,14 +135,13 @@ func (s *OrdersService) processItems(ctx context.Context, items []domain.CreateI
 	result := make([]domain.ItemOrden, 0, len(items))
 
 	for i, item := range items {
-		// PASO 1: Obtener información del producto
 		log.Printf("Obteniendo info del producto %s...", item.ProductoID)
 		producto, err := s.productsClient.GetProducto(ctx, item.ProductoID)
 		if err != nil {
 			return nil, fmt.Errorf("error obteniendo producto %s (item #%d): %w", item.ProductoID, i+1, err)
 		}
 		log.Printf(" Producto encontrado: %s - $%.2f", producto.Nombre, producto.PrecioBase)
-		// PASO 2: Obtener quote (precio calculado)
+
 		log.Printf(" Calculando precio para producto %s con variante '%s' y %d modificadores...",
 			item.ProductoID, item.VarianteNombre, len(item.Modificadores))
 
@@ -153,10 +152,8 @@ func (s *OrdersService) processItems(ctx context.Context, items []domain.CreateI
 
 		log.Printf("Precio calculado: $%.2f", precio.PrecioTotal)
 
-		// PASO 3: Construir snapshot de VARIANTE (si existe)
 		var varianteSnapshot *domain.Variante
 		if item.VarianteNombre != "" {
-			// Buscar la variante en el catálogo del producto
 			for _, v := range producto.Variantes {
 				if v.Nombre == item.VarianteNombre {
 					varianteSnapshot = &domain.Variante{
@@ -168,46 +165,39 @@ func (s *OrdersService) processItems(ctx context.Context, items []domain.CreateI
 				}
 			}
 
-			// Si no se encontró la variante solicitada
 			if varianteSnapshot == nil {
 				return nil, fmt.Errorf("variante '%s' no encontrada en producto %s (item #%d)",
 					item.VarianteNombre, producto.Nombre, i+1)
 			}
 		}
 
-		// PASO 4: Construir snapshots de MODIFICADORES
 		modificadoresSnapshot := make([]domain.Modificador, 0, len(item.Modificadores))
 
 		for _, modNombre := range item.Modificadores {
 			encontrado := false
 
-			// Buscar el modificador en el catálogo del producto
 			for _, mod := range producto.Modificadores {
 				if mod.Nombre == modNombre {
 					modificadoresSnapshot = append(modificadoresSnapshot, domain.Modificador{
 						Nombre:          mod.Nombre,
 						PrecioAdicional: mod.PrecioAdicional,
 					})
-					log.Printf("📸 Snapshot de modificador: %s (+$%.2f)", mod.Nombre, mod.PrecioAdicional)
+					log.Printf("Snapshot de modificador: %s (+$%.2f)", mod.Nombre, mod.PrecioAdicional)
 					encontrado = true
 					break
 				}
 			}
 
-			// Si no se encontró el modificador solicitado
 			if !encontrado {
 				return nil, fmt.Errorf("modificador '%s' no encontrado en producto %s (item #%d)",
 					modNombre, producto.Nombre, i+1)
 			}
 		}
 
-		// PASO 5: Calcular subtotal del item
-		// Precio unitario (con variante y modificadores) * cantidad
 		subtotalItem := precio.PrecioTotal * float64(item.Cantidad)
 
 		log.Printf(" Subtotal item: $%.2f × %d = $%.2f", precio.PrecioTotal, item.Cantidad, subtotalItem)
 
-		// PASO 6: Construir ItemOrden con SNAPSHOT COMPLETO
 		itemOrden := domain.ItemOrden{
 			ProductoID:                 item.ProductoID,
 			NombreProducto:             producto.Nombre,
@@ -264,7 +254,7 @@ func (s *OrdersService) UpdateStatus(ctx context.Context, id string, nuevoEstado
 	}
 
 	if err := s.eventPublisher.Publish(ctx, "order_status_changed", updated.ID); err != nil {
-		log.Printf("⚠️ Error publicando evento de cambio de estado: %v", err)
+		log.Printf("Error publicando evento de cambio de estado: %v", err)
 	}
 
 	return updated, nil
@@ -305,7 +295,7 @@ func (s *OrdersService) CancelOrder(ctx context.Context, id string) error {
 	}
 
 	if err := s.eventPublisher.Publish(ctx, "order_cancelled", id); err != nil {
-		log.Printf("⚠️ Error publicando evento de cancelación: %v", err)
+		log.Printf("Error publicando evento de cancelación: %v", err)
 	}
 
 	return nil

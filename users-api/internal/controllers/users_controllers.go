@@ -31,7 +31,6 @@ func NewAuthController(service AuthService) *AuthController {
 func (c *AuthController) Register(ctx *gin.Context) {
 	var req domain.RegisterRequest
 
-	// 1. Validar JSON de entrada
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Datos de entrada inválidos",
@@ -40,10 +39,8 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
-	// 2. Llamar al servicio
 	response, err := c.service.Register(ctx.Request.Context(), req)
 	if err != nil {
-		// Determinar código de error apropiado
 		statusCode := http.StatusInternalServerError
 		if err.Error() == "el username ya está en uso" || err.Error() == "el email ya está registrado" {
 			statusCode = http.StatusConflict
@@ -63,7 +60,6 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
-	// 3. Responder con éxito (token y usuario)
 	ctx.JSON(http.StatusCreated, response)
 }
 
@@ -71,7 +67,6 @@ func (c *AuthController) Register(ctx *gin.Context) {
 func (c *AuthController) Login(ctx *gin.Context) {
 	var req domain.LoginRequest
 
-	// 1. Validar JSON de entrada
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Datos de entrada inválidos",
@@ -80,7 +75,6 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		return
 	}
 
-	// 2. Llamar al servicio
 	response, err := c.service.Login(ctx.Request.Context(), req)
 	if err != nil {
 		statusCode := http.StatusUnauthorized
@@ -95,7 +89,6 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		return
 	}
 
-	// 3. Responder con token
 	ctx.JSON(http.StatusOK, response)
 }
 
@@ -111,7 +104,6 @@ func NewUsersController(service AuthService) *UsersController {
 
 // GetMe maneja GET /users/me - obtiene el perfil del usuario autenticado
 func (c *UsersController) GetMe(ctx *gin.Context) {
-	// 1. Obtener userID del contexto (inyectado por middleware)
 	userID, exists := middleware.GetUserIDFromContext(ctx)
 	if !exists {
 		ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -120,7 +112,6 @@ func (c *UsersController) GetMe(ctx *gin.Context) {
 		return
 	}
 
-	// 2. Obtener usuario
 	user, err := c.service.GetUserByID(ctx.Request.Context(), userID)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
@@ -135,13 +126,11 @@ func (c *UsersController) GetMe(ctx *gin.Context) {
 		return
 	}
 
-	// 3. Responder con el usuario
 	ctx.JSON(http.StatusOK, user)
 }
 
 // GetByID maneja GET /users/:id - obtiene un usuario por ID
 func (c *UsersController) GetByID(ctx *gin.Context) {
-	// 1. Obtener ID del parámetro
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
@@ -151,7 +140,6 @@ func (c *UsersController) GetByID(ctx *gin.Context) {
 		return
 	}
 
-	// 2. Obtener usuario
 	user, err := c.service.GetUserByID(ctx.Request.Context(), id)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
@@ -166,6 +154,5 @@ func (c *UsersController) GetByID(ctx *gin.Context) {
 		return
 	}
 
-	// 3. Responder con el usuario
 	ctx.JSON(http.StatusOK, user)
 }
