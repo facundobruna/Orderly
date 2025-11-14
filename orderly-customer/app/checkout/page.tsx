@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useCartStore } from "@/lib/store/cartStore";
 import { useAuthStore } from "@/lib/store/authStore";
 import { ordersApi } from "@/lib/api";
-import { PaymentMethod, ItemOrden } from "@/types";
+import { PaymentMethod, CreateOrdenRequest } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 
 export default function CheckoutPage() {
@@ -51,29 +51,22 @@ export default function CheckoutPage() {
     setError("");
 
     try {
-      // Convertir cart items a items de orden
-      const orderItems: ItemOrden[] = items.map((item) => ({
+      // Convertir cart items a formato que espera el backend
+      const orderItems = items.map((item) => ({
         producto_id: item.producto.id,
-        nombre_producto: item.producto.nombre,
-        precio_base: item.producto.precio_base,
         cantidad: item.cantidad,
-        variante_seleccionada: item.variante_seleccionada,
-        modificadores_seleccionados: item.modificadores_seleccionados,
-        subtotal: item.subtotal,
-        observaciones: item.observaciones,
+        variante_nombre: item.variante_seleccionada?.nombre || "",
+        modificadores: item.modificadores_seleccionados.map((m) => m.nombre),
       }));
 
-      // Crear orden
-      const ordenData = {
-        negocio_id: negocio_id!,
+      // Crear orden - convertir a strings como espera el backend
+      const ordenData: CreateOrdenRequest = {
+        negocio_id: String(negocio_id!),
         sucursal_id: sucursal_id!,
-        usuario_id: user?.id_usuario,
-        mesa: mesa || undefined,
+        usuario_id: user?.id_usuario ? String(user.id_usuario) : "0",
+        mesa: mesa || "",
         items: orderItems,
         observaciones,
-        pago: {
-          metodo: paymentMethod,
-        },
       };
 
       const orden = await ordersApi.createOrder(ordenData);

@@ -47,16 +47,22 @@ export interface Orden {
   updated_at: string;
 }
 
+// Item para crear orden (formato que espera el backend)
+export interface CreateItemOrdenRequest {
+  producto_id: string;
+  cantidad: number;
+  variante_nombre?: string;  // Solo el nombre de la variante
+  modificadores?: string[];   // Solo los nombres de los modificadores
+}
+
+// Estructura para crear orden (formato que espera el backend)
 export interface CreateOrdenRequest {
-  negocio_id: number;
+  negocio_id: string;  // Backend espera string
   sucursal_id: string;
-  usuario_id?: number;
+  usuario_id: string;  // Backend espera string y es required
   mesa?: string;
-  items: ItemOrden[];
+  items: CreateItemOrdenRequest[];
   observaciones?: string;
-  pago: {
-    metodo: PaymentMethod;
-  };
 }
 
 export interface UpdateOrderStatusRequest {
