@@ -40,7 +40,16 @@ export default function RegisterPage() {
                 navigate("/negocio/1/1", { replace: true });
             }, 1000);
         } catch (err: any) {
-            const errorMsg = err?.message ?? "Error registrando usuario";
+            let errorMsg = err?.message ?? "Error registrando usuario";
+
+            if (errorMsg.includes("Email") && errorMsg.includes("validation")) {
+                errorMsg = "Por favor ingresa un email válido";
+            } else if (errorMsg.includes("username") && errorMsg.includes("already")) {
+                errorMsg = "Este nombre de usuario ya está en uso";
+            } else if (errorMsg.includes("email") && errorMsg.includes("already")) {
+                errorMsg = "Este email ya está registrado";
+            }
+
             setError(errorMsg);
             showError(errorMsg);
         }
