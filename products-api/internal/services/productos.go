@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"products-api/internal/domain"
 	"strings"
 )
@@ -25,6 +26,11 @@ type ProductosPublisher interface {
 	Publish(ctx context.Context, action string, productoID string) error
 }
 
+// ProductosConsumer consume eventos de productos
+/*type ProductosConsumer interface {
+	Consume(ctx context.Context, handler func(ctx context.Context, message ProductoEvent) error) error
+}*/
+
 // NegocioValidator valida la existencia de negocios
 type NegocioValidator interface {
 	ValidateNegocioExists(ctx context.Context, negocioID string) (bool, error)
@@ -32,18 +38,75 @@ type NegocioValidator interface {
 
 // ProductosService implementa la lógica de negocio para productos
 type ProductosService struct {
-	repository        ProductosRepository
-	publisher         ProductosPublisher
-	negocioValidator  NegocioValidator
+	repository ProductosRepository
+	publisher  ProductosPublisher
+	//consumer         ProductosConsumer
+	negocioValidator NegocioValidator
+}
+
+// ProductoEvent estructura del evento de producto
+type ProductoEvent struct {
+	Action string `json:"action"` // "create", "update", "delete"
+	ItemID string `json:"item_id"`
 }
 
 // NewProductosService crea una nueva instancia del service
-func NewProductosService(repository ProductosRepository, publisher ProductosPublisher, negocioValidator NegocioValidator) *ProductosService {
+func NewProductosService(repository ProductosRepository, publisher ProductosPublisher /*consumer ProductosConsumer*/, negocioValidator NegocioValidator) *ProductosService {
 	return &ProductosService{
-		repository:       repository,
-		publisher:        publisher,
+		repository: repository,
+		publisher:  publisher,
+		//consumer:         consumer,
 		negocioValidator: negocioValidator,
 	}
+}
+
+// InitConsumer inicia el consumidor de eventos en una goroutine
+/*func (s *ProductosService) InitConsumer(ctx context.Context) {
+	log.Println("Starting RabbitMQ consumer for products...")
+
+	if err := s.consumer.Consume(ctx, s.handleMessage); err != nil {
+		log.Printf("Error in RabbitMQ consumer: %v", err)
+	}
+	log.Println("RabbitMQ consumer stopped.")
+}*/
+
+// handleMessage procesa los mensajes recibidos de RabbitMQ
+func (s *ProductosService) handleMessage(ctx context.Context, message ProductoEvent) error {
+	log.Printf("Processing product message: action=%s, item_id=%s", message.Action, message.ItemID)
+
+	switch message.Action {
+	case "create":
+		log.Printf("Product created: %s", message.ItemID)
+
+		// Obtener el producto completo
+		producto, err := s.repository.GetByID(ctx, message.ItemID)
+		if err != nil {
+			log.Printf("Error getting product for indexing: %v", err)
+			return fmt.Errorf("error getting product for indexing: %w", err)
+		}
+
+		// Aquí podrías agregar lógica adicional, como:
+		// - Enviar notificaciones
+		// - Actualizar estadísticas
+		// - Sincronizar con otros sistemas
+
+		log.Printf("Product processed: %s - %s", producto.ID, producto.Nombre)
+
+	case "update":
+		log.Printf("Product updated: %s", message.ItemID)
+		// Lógica para actualización
+		// Por ejemplo: invalidar caché, notificar cambios, etc.
+
+	case "delete":
+		log.Printf("Product deleted: %s", message.ItemID)
+		// Lógica para eliminación
+		// Por ejemplo: limpiar referencias, notificar, etc.
+
+	default:
+		log.Printf("Unknown action: %s", message.Action)
+	}
+
+	return nil
 }
 
 // Create valida y crea un nuevo producto
@@ -93,8 +156,7 @@ func (s *ProductosService) Create(ctx context.Context, req domain.CreateProducto
 	// Publicar evento
 	if s.publisher != nil {
 		if err := s.publisher.Publish(ctx, "create", created.ID); err != nil {
-			// Log error pero no fallar la operación
-			fmt.Printf("Error publicando evento de creación: %v\n", err)
+			log.Printf("Error publicando evento de creación: %v", err)
 		}
 	}
 
@@ -142,7 +204,7 @@ func (s *ProductosService) Update(ctx context.Context, id string, req domain.Upd
 	// Publicar evento
 	if s.publisher != nil {
 		if err := s.publisher.Publish(ctx, "update", updated.ID); err != nil {
-			fmt.Printf(" Error publicando evento de actualización: %v\n", err)
+			log.Printf("Error publicando evento de actualización: %v", err)
 		}
 	}
 
@@ -163,7 +225,7 @@ func (s *ProductosService) Delete(ctx context.Context, id string) error {
 	// Publicar evento
 	if s.publisher != nil {
 		if err := s.publisher.Publish(ctx, "delete", id); err != nil {
-			fmt.Printf("⚠️  Error publicando evento de eliminación: %v\n", err)
+			log.Printf("Error publicando evento de eliminación: %v", err)
 		}
 	}
 
@@ -203,9 +265,10 @@ func (s *ProductosService) validateCreateRequest(req domain.CreateProductoReques
 
 	return nil
 }
+
 func (s *ProductosService) SearchProducts(ctx context.Context, query string, filters map[string]string) ([]domain.Producto, error) {
 	// Si el repository tiene Solr habilitado, usarlo
-	if s.repository.HasSolr() { // Necesitarás agregar este método al repository
+	if s.repository.HasSolr() {
 		return s.searchWithSolr(ctx, query, filters)
 	}
 
