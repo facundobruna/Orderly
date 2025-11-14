@@ -21,12 +21,10 @@ type NegociosService interface {
 	ExistsNegocio(ctx context.Context, id uint64) (bool, error)
 }
 
-// NegociosController maneja las peticiones HTTP de negocios
 type NegociosController struct {
 	service NegociosService
 }
 
-// NewNegociosController crea una nueva instancia del controller
 func NewNegociosController(service NegociosService) *NegociosController {
 	return &NegociosController{service: service}
 }
@@ -35,7 +33,6 @@ func NewNegociosController(service NegociosService) *NegociosController {
 func (c *NegociosController) Create(ctx *gin.Context) {
 	var req domain.CreateNegocioRequest
 
-	// 1. Obtener userID del contexto (inyectado por middleware)
 	userID, exists := middleware.GetUserIDFromContext(ctx)
 	if !exists {
 		ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -44,7 +41,6 @@ func (c *NegociosController) Create(ctx *gin.Context) {
 		return
 	}
 
-	// 2. Validar JSON de entrada
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Datos de entrada inválidos",
@@ -53,7 +49,6 @@ func (c *NegociosController) Create(ctx *gin.Context) {
 		return
 	}
 
-	// 3. Llamar al servicio
 	negocio, err := c.service.CreateNegocio(ctx.Request.Context(), userID, req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
@@ -70,7 +65,6 @@ func (c *NegociosController) Create(ctx *gin.Context) {
 		return
 	}
 
-	// 4. Responder con éxito
 	ctx.JSON(http.StatusCreated, gin.H{
 		"message": "Negocio creado exitosamente",
 		"negocio": negocio,
@@ -96,7 +90,6 @@ func (c *NegociosController) ListAll(ctx *gin.Context) {
 
 // ListMyNegocios maneja GET /negocios/my
 func (c *NegociosController) ListMyNegocios(ctx *gin.Context) {
-	// 1. Obtener userID del contexto
 	userID, exists := middleware.GetUserIDFromContext(ctx)
 	if !exists {
 		ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -105,7 +98,6 @@ func (c *NegociosController) ListMyNegocios(ctx *gin.Context) {
 		return
 	}
 
-	// 2. Obtener negocios del usuario
 	negocios, err := c.service.ListNegociosByUsuario(ctx.Request.Context(), userID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -123,7 +115,6 @@ func (c *NegociosController) ListMyNegocios(ctx *gin.Context) {
 
 // GetByID maneja GET /negocios/:id
 func (c *NegociosController) GetByID(ctx *gin.Context) {
-	// 1. Obtener ID del parámetro
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
@@ -133,7 +124,6 @@ func (c *NegociosController) GetByID(ctx *gin.Context) {
 		return
 	}
 
-	// 2. Obtener negocio
 	negocio, err := c.service.GetnegocioByID(ctx.Request.Context(), id)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
@@ -155,7 +145,6 @@ func (c *NegociosController) GetByID(ctx *gin.Context) {
 func (c *NegociosController) Update(ctx *gin.Context) {
 	var req domain.UpdateNegocioRequest
 
-	// 1. Obtener ID del parámetro
 	idStr := ctx.Param("id")
 	negocioID, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
@@ -165,7 +154,6 @@ func (c *NegociosController) Update(ctx *gin.Context) {
 		return
 	}
 
-	// 2. Obtener userID del contexto
 	userID, exists := middleware.GetUserIDFromContext(ctx)
 	if !exists {
 		ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -174,7 +162,6 @@ func (c *NegociosController) Update(ctx *gin.Context) {
 		return
 	}
 
-	// 3. Validar JSON de entrada
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Datos de entrada inválidos",
@@ -183,7 +170,6 @@ func (c *NegociosController) Update(ctx *gin.Context) {
 		return
 	}
 
-	// 4. Llamar al servicio
 	negocio, err := c.service.UpdateNegocio(ctx.Request.Context(), negocioID, userID, req)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
@@ -202,7 +188,6 @@ func (c *NegociosController) Update(ctx *gin.Context) {
 		return
 	}
 
-	// 5. Responder con éxito
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Negocio actualizado exitosamente",
 		"negocio": negocio,
@@ -211,7 +196,6 @@ func (c *NegociosController) Update(ctx *gin.Context) {
 
 // Delete maneja DELETE /negocios/:id
 func (c *NegociosController) Delete(ctx *gin.Context) {
-	// 1. Obtener ID del parámetro
 	idStr := ctx.Param("id")
 	negocioID, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
@@ -221,7 +205,6 @@ func (c *NegociosController) Delete(ctx *gin.Context) {
 		return
 	}
 
-	// 2. Obtener userID del contexto
 	userID, exists := middleware.GetUserIDFromContext(ctx)
 	if !exists {
 		ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -230,7 +213,6 @@ func (c *NegociosController) Delete(ctx *gin.Context) {
 		return
 	}
 
-	// 3. Llamar al servicio
 	err = c.service.DeleteNegocio(ctx.Request.Context(), negocioID, userID)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
@@ -247,7 +229,6 @@ func (c *NegociosController) Delete(ctx *gin.Context) {
 		return
 	}
 
-	// 4. Responder con éxito
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Negocio eliminado exitosamente",
 	})
@@ -255,7 +236,6 @@ func (c *NegociosController) Delete(ctx *gin.Context) {
 
 // Exists maneja GET /negocios/:id/exists
 func (c *NegociosController) Exists(ctx *gin.Context) {
-	// 1. Obtener ID del parámetro
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
@@ -266,7 +246,6 @@ func (c *NegociosController) Exists(ctx *gin.Context) {
 		return
 	}
 
-	// 2. Verificar existencia
 	exists, err := c.service.ExistsNegocio(ctx.Request.Context(), id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{

@@ -67,7 +67,7 @@ func (r *RabbitMQClient) connect() error {
 	r.channel = channel
 	r.queue = &queue
 
-	log.Printf("✅ Connected to RabbitMQ: %s:%s", r.host, r.port)
+	log.Printf("Connected to RabbitMQ: %s:%s", r.host, r.port)
 	return nil
 }
 
@@ -80,10 +80,10 @@ func (r *RabbitMQClient) ensureConnection() error {
 
 	// Si el canal está cerrado, crear uno nuevo
 	if r.channel == nil || r.channel.IsClosed() {
-		log.Println("⚠️  RabbitMQ channel is closed, reopening...")
+		log.Println("RabbitMQ channel is closed, reopening...")
 		channel, err := r.connection.Channel()
 		if err != nil {
-			log.Println("❌ Failed to reopen channel, reconnecting...")
+			log.Println("Failed to reopen channel, reconnecting...")
 			return r.connect()
 		}
 		r.channel = channel
@@ -143,26 +143,26 @@ func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Conte
 		return fmt.Errorf("failed to register consumer: %w", err)
 	}
 
-	log.Printf("🎯 Consumer registered for queue: %s", r.queue.Name)
+	log.Printf("Consumer registered for queue: %s", r.queue.Name)
 
 	// Loop infinito para consumir mensajes
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("🛑 Consumer context cancelled")
+			log.Println("Consumer context cancelled")
 			return ctx.Err()
 
 		case msg := <-msgs:
 			// Deserializar mensaje
 			var event OrderEvent
 			if err := json.Unmarshal(msg.Body, &event); err != nil {
-				log.Printf("❌ Error unmarshalling message: %v", err)
+				log.Printf("Error unmarshalling message: %v", err)
 				continue
 			}
 
 			// Procesar mensaje
 			if err := handler(ctx, event); err != nil {
-				log.Printf("❌ Error handling message: %v", err)
+				log.Printf("Error handling message: %v", err)
 			}
 		}
 	}
