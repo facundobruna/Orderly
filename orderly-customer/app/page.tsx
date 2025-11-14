@@ -21,8 +21,10 @@ export default function Home() {
     queryFn: () => authApi.getNegocios(),
   });
 
-  // Filter active negocios
-  const activeNegocios = (negocios || []).filter((n: Negocio) => n.activo);
+  // Filter active negocios - ensure negocios is an array
+  const activeNegocios = Array.isArray(negocios)
+    ? negocios.filter((n: Negocio) => n.activo)
+    : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
