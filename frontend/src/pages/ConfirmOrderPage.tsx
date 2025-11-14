@@ -12,7 +12,7 @@ type LocationState = {
     total: number;
 };
 
-export default function ConfirmOrderPage() {
+export default function ConfirmOrderPge() {
     const { negocioId, sucursalId } = useParams<{
         negocioId: string;
         sucursalId?: string;
