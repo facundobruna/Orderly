@@ -40,6 +40,18 @@ export interface CreateProductoRequest {
   tags?: string[];
 }
 
+export interface UpdateProductoRequest {
+  nombre?: string;
+  descripcion?: string;
+  precio_base?: number;
+  categoria?: string;
+  imagen_url?: string;
+  disponible?: boolean;
+  variantes?: Variante[];
+  modificadores?: Modificador[];
+  tags?: string[];
+}
+
 export interface ProductQuoteRequest {
   variante_seleccionada?: Variante;
   modificadores_seleccionados: Modificador[];

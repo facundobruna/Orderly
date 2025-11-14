@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { mesasApi, negociosApi } from "@/lib/api";
 import { Mesa, Negocio, CreateMesaRequest } from "@/types";
-import { Plus, Table2, Trash2, QrCode } from "lucide-react";
+import { Plus, Table2, Trash2, QrCode, Download } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function MesasPage() {
   const [mesas, setMesas] = useState<Mesa[]>([]);
@@ -163,24 +164,63 @@ export default function MesasPage() {
                     </div>
                   </div>
 
-                  <div className="mb-4 p-3 bg-gray-50 rounded flex items-center justify-center">
-                    <QrCode className="h-16 w-16 text-gray-400" />
+                  <div className="mb-4 p-3 bg-white border rounded flex flex-col items-center">
+                    <QRCodeSVG
+                      id={`qr-${mesa.id_mesa}`}
+                      value={mesa.qr_code}
+                      size={120}
+                      level="H"
+                      includeMargin={true}
+                    />
+                    <p className="text-xs text-gray-500 mt-2 text-center break-all">
+                      {mesa.qr_code.slice(0, 20)}...
+                    </p>
                   </div>
 
                   <div className="text-xs text-gray-600 mb-4">
                     <div>ID: {mesa.id_mesa}</div>
-                    <div className="truncate">QR: {mesa.qr_code}</div>
+                    <div>Sucursal: {mesa.sucursal_id}</div>
                   </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-red-600 hover:bg-red-50"
-                    onClick={() => handleDelete(mesa.id_mesa)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Eliminar
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        const canvas = document.createElement('canvas');
+                        const svg = document.querySelector(`#qr-${mesa.id_mesa}`);
+                        if (!svg) return;
+
+                        const svgData = new XMLSerializer().serializeToString(svg);
+                        const img = new Image();
+                        img.onload = () => {
+                          canvas.width = img.width;
+                          canvas.height = img.height;
+                          const ctx = canvas.getContext('2d');
+                          ctx?.drawImage(img, 0, 0);
+                          const pngFile = canvas.toDataURL('image/png');
+                          const downloadLink = document.createElement('a');
+                          downloadLink.download = `mesa-${mesa.numero}-qr.png`;
+                          downloadLink.href = pngFile;
+                          downloadLink.click();
+                        };
+                        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                      }}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Descargar QR
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-red-600 hover:bg-red-50"
+                      onClick={() => handleDelete(mesa.id_mesa)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Eliminar
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
