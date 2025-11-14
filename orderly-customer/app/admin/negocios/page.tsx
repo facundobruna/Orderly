@@ -23,11 +23,8 @@ export default function NegociosPage() {
     try {
       setIsLoading(true);
       setError("");
-      const data = await negociosApi.getMy();
-      console.log("Negocios API response:", data);
-      const negociosArray = Array.isArray(data) ? data : [];
-      console.log("Processed negocios array:", negociosArray);
-      setNegocios(negociosArray);
+      const negocios = await negociosApi.getMy();
+      setNegocios(negocios);
     } catch (err: any) {
       console.error("Error loading negocios:", err);
       console.error("Error response:", err.response?.data);

@@ -5,13 +5,13 @@ export const negociosApi = {
   // Obtener todos los negocios
   async getAll(): Promise<Negocio[]> {
     const response = await usersClient.get("/negocios");
-    return response.data;
+    return response.data.negocios || [];
   },
 
   // Obtener mis negocios (requiere auth)
   async getMy(): Promise<Negocio[]> {
     const response = await usersClient.get("/negocios/my");
-    return response.data;
+    return response.data.negocios || [];
   },
 
   // Obtener un negocio por ID

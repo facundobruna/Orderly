@@ -32,9 +32,8 @@ export default function AdminDashboard() {
     try {
       setIsLoading(true);
 
-      // Obtener negocios - ensure it's an array
-      const negociosData = await negociosApi.getMy();
-      const negocios = Array.isArray(negociosData) ? negociosData : [];
+      // Obtener negocios
+      const negocios = await negociosApi.getMy();
 
       // Obtener órdenes - API returns Orden[] directly, not paginated
       const ordenesData = await ordersApi.getOrders({});

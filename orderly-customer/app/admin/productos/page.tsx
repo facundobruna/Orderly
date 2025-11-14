@@ -29,11 +29,10 @@ export default function ProductosPage() {
 
   const loadNegocios = async () => {
     try {
-      const data = await negociosApi.getMy();
-      const negociosArray = Array.isArray(data) ? data : [];
-      setNegocios(negociosArray);
-      if (negociosArray.length > 0) {
-        setSelectedNegocio(negociosArray[0].id_negocio);
+      const negocios = await negociosApi.getMy();
+      setNegocios(negocios);
+      if (negocios.length > 0) {
+        setSelectedNegocio(negocios[0].id_negocio);
       }
     } catch (error) {
       console.error("Error loading negocios:", error);
