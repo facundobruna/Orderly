@@ -61,8 +61,9 @@ export default function OrdenesPage() {
 
     try {
       setIsLoading(true);
-      const response = await ordersApi.getOrders({ negocio_id: String(selectedNegocio) });
-      let orders = Array.isArray(response?.results) ? response.results : [];
+      // API returns Orden[] directly, not paginated
+      const ordenesData = await ordersApi.getOrders({ negocio_id: String(selectedNegocio) });
+      let orders = Array.isArray(ordenesData) ? ordenesData : [];
 
       // Filter based on selection
       if (filter === "activas") {
@@ -83,7 +84,7 @@ export default function OrdenesPage() {
   const handleUpdateStatus = async (ordenId: string, nuevoEstado: string) => {
     try {
       setUpdatingId(ordenId);
-      await ordersApi.updateOrderStatus(ordenId, nuevoEstado);
+      await ordersApi.updateOrderStatus(ordenId, { estado: nuevoEstado });
       setOrdenes(ordenes.map(o => o.id === ordenId ? { ...o, estado: nuevoEstado } : o));
     } catch (error) {
       console.error("Error updating order status:", error);

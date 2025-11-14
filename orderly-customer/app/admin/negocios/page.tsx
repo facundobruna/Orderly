@@ -13,6 +13,7 @@ export default function NegociosPage() {
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     loadNegocios();
@@ -21,11 +22,17 @@ export default function NegociosPage() {
   const loadNegocios = async () => {
     try {
       setIsLoading(true);
+      setError("");
       const data = await negociosApi.getMy();
+      console.log("Negocios API response:", data);
       const negociosArray = Array.isArray(data) ? data : [];
+      console.log("Processed negocios array:", negociosArray);
       setNegocios(negociosArray);
-    } catch (error) {
-      console.error("Error loading negocios:", error);
+    } catch (err: any) {
+      console.error("Error loading negocios:", err);
+      console.error("Error response:", err.response?.data);
+      setError(err.response?.data?.error || "Error al cargar los negocios");
+      setNegocios([]);
     } finally {
       setIsLoading(false);
     }
@@ -67,6 +74,12 @@ export default function NegociosPage() {
       />
 
       <div className="p-8">
+        {error && (
+          <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
         <div className="flex justify-between items-center mb-6">
           <div>
             <p className="text-sm text-gray-600">
@@ -81,7 +94,7 @@ export default function NegociosPage() {
           </Link>
         </div>
 
-        {negocios.length === 0 ? (
+        {negocios.length === 0 && !error ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <Store className="h-16 w-16 text-gray-400 mb-4" />

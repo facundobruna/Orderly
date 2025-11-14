@@ -36,9 +36,9 @@ export default function AdminDashboard() {
       const negociosData = await negociosApi.getMy();
       const negocios = Array.isArray(negociosData) ? negociosData : [];
 
-      // Obtener órdenes - ensure results is an array
-      const ordersResponse = await ordersApi.getOrders({});
-      const ordenes = Array.isArray(ordersResponse?.results) ? ordersResponse.results : [];
+      // Obtener órdenes - API returns Orden[] directly, not paginated
+      const ordenesData = await ordersApi.getOrders({});
+      const ordenes = Array.isArray(ordenesData) ? ordenesData : [];
 
       // Calcular órdenes de hoy - validate creado_en is a string
       const hoy = new Date().toISOString().split('T')[0];
