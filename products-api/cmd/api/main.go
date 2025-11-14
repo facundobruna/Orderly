@@ -21,12 +21,14 @@ func main() {
 
 	// Contexto
 	ctx := context.Background()
+
 	cacheClient := clients.NewMemcachedClient(
 		cfg.Memcached.Host+":"+cfg.Memcached.Port,
 		cfg.Memcached.TTLSeconds,
 	)
+
 	// Repository de productos (MongoDB)
-	solrClient := clients.NewSolrClient(cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core) // Ajusta los parámetros según tu configuración
+	solrClient := clients.NewSolrClient(cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core)
 
 	productosRepo := repository.NewMongoProductosRepository(
 		ctx,
@@ -34,10 +36,10 @@ func main() {
 		cfg.Mongo.DB,
 		"productos",
 		cacheClient,
-		solrClient, // Agregar el parámetro que faltaba
+		solrClient,
 	)
 
-	// RabbitMQ para eventos
+	// RabbitMQ para eventos - actúa como productor Y consumidor
 	productosQueue := clients.NewRabbitMQClient(
 		cfg.RabbitMQ.Username,
 		cfg.RabbitMQ.Password,
@@ -49,8 +51,16 @@ func main() {
 	// Cliente para validar negocios con users-api
 	usersAPIClient := clients.NewUsersAPIClient(cfg.UsersAPI.BaseURL)
 
-	// Service de productos
-	productosService := services.NewProductosService(productosRepo, productosQueue, usersAPIClient)
+	// Service de productos - Ahora recibe publisher Y consumer
+	productosService := services.NewProductosService(
+		productosRepo,
+		productosQueue, // como publisher
+		//productosQueue, // como consumer
+		usersAPIClient,
+	)
+
+	// Iniciar consumidor en goroutine
+	//go productosService.InitConsumer(ctx)  DESCOMENTAR
 
 	// Controller de productos
 	productosController := controllers.NewProductosController(productosService)
@@ -86,6 +96,7 @@ func main() {
 	log.Printf("Products API listening on port %s", cfg.Port)
 	log.Printf("Health check: http://localhost:%s/healthz", cfg.Port)
 	log.Printf("Products endpoints: http://localhost:%s/products", cfg.Port)
+	log.Printf("RabbitMQ consumer running in background")
 
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("server error: %v", err)

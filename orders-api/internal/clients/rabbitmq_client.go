@@ -20,26 +20,84 @@ type RabbitMQClient struct {
 	connection *amqp091.Connection
 	channel    *amqp091.Channel
 	queue      *amqp091.Queue
+	user       string
+	password   string
+	queueName  string
+	host       string
+	port       string
 }
 
 func NewRabbitMQClient(user, password, queueName, host, port string) *RabbitMQClient {
-	connStr := fmt.Sprintf("amqp://%s:%s@%s:%s/", user, password, host, port) // 👈 %s
+	client := &RabbitMQClient{
+		user:      user,
+		password:  password,
+		queueName: queueName,
+		host:      host,
+		port:      port,
+	}
+
+	if err := client.connect(); err != nil {
+		log.Fatalf("failed to connect to RabbitMQ: %v", err)
+	}
+
+	return client
+}
+
+func (r *RabbitMQClient) connect() error {
+	connStr := fmt.Sprintf("amqp://%s:%s@%s:%s/", r.user, r.password, r.host, r.port)
 	connection, err := amqp091.Dial(connStr)
 	if err != nil {
-		log.Fatalf("failed to connect to RabbitMQ: %v", err) // 👈 %v, no %w
+		return fmt.Errorf("failed to dial RabbitMQ: %w", err)
 	}
+
 	channel, err := connection.Channel()
 	if err != nil {
-		log.Fatalf("failed to open a channel: %v", err)
+		connection.Close()
+		return fmt.Errorf("failed to open channel: %w", err)
 	}
-	queue, err := channel.QueueDeclare(queueName, false, false, false, false, nil)
+
+	queue, err := channel.QueueDeclare(r.queueName, false, false, false, false, nil)
 	if err != nil {
-		log.Fatalf("failed to declare a queue: %v", err)
+		channel.Close()
+		connection.Close()
+		return fmt.Errorf("failed to declare queue: %w", err)
 	}
-	return &RabbitMQClient{connection: connection, channel: channel, queue: &queue}
+
+	r.connection = connection
+	r.channel = channel
+	r.queue = &queue
+
+	log.Printf("✅ Connected to RabbitMQ: %s:%s", r.host, r.port)
+	return nil
+}
+
+func (r *RabbitMQClient) ensureConnection() error {
+	// Si la conexión está cerrada, reconectar
+	if r.connection == nil || r.connection.IsClosed() {
+		log.Println("⚠️  RabbitMQ connection is closed, reconnecting...")
+		return r.connect()
+	}
+
+	// Si el canal está cerrado, crear uno nuevo
+	if r.channel == nil || r.channel.IsClosed() {
+		log.Println("⚠️  RabbitMQ channel is closed, reopening...")
+		channel, err := r.connection.Channel()
+		if err != nil {
+			log.Println("❌ Failed to reopen channel, reconnecting...")
+			return r.connect()
+		}
+		r.channel = channel
+	}
+
+	return nil
 }
 
 func (r *RabbitMQClient) Publish(ctx context.Context, action string, orderID string) error {
+	// Asegurar que la conexión esté activa
+	if err := r.ensureConnection(); err != nil {
+		return fmt.Errorf("failed to ensure RabbitMQ connection: %w", err)
+	}
+
 	message := map[string]interface{}{
 		"action":   action,
 		"order_id": orderID,

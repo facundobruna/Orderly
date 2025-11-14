@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"products-api/internal/services"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,10 +24,10 @@ type RabbitMQClient struct {
 }
 
 func NewRabbitMQClient(user, password, queueName, host, port string) *RabbitMQClient {
-	connStr := fmt.Sprintf("amqp://%s:%s@%s:%s/", user, password, host, port) // 👈 %s
+	connStr := fmt.Sprintf("amqp://%s:%s@%s:%s/", user, password, host, port)
 	connection, err := amqp091.Dial(connStr)
 	if err != nil {
-		log.Fatalf("failed to connect to RabbitMQ: %v", err) // 👈 %v, no %w
+		log.Fatalf("failed to connect to RabbitMQ: %v", err)
 	}
 	channel, err := connection.Channel()
 	if err != nil {
@@ -36,6 +37,7 @@ func NewRabbitMQClient(user, password, queueName, host, port string) *RabbitMQCl
 	if err != nil {
 		log.Fatalf("failed to declare a queue: %v", err)
 	}
+	log.Printf("RabbitMQ client initialized - Queue: %s", queueName)
 	return &RabbitMQClient{connection: connection, channel: channel, queue: &queue}
 }
 
@@ -56,11 +58,55 @@ func (r *RabbitMQClient) Publish(ctx context.Context, action string, itemID stri
 		DeliveryMode:    amqp091.Transient,
 		MessageId:       uuid.New().String(),
 		Timestamp:       time.Now().UTC(),
-		AppId:           "items-api",
+		AppId:           "products-api",
 		Body:            bytes,
 	}); err != nil {
 		return fmt.Errorf("error publishing message to RabbitMQ: %w", err)
 	}
+
+	log.Printf("Published to RabbitMQ: action=%s, item_id=%s", action, itemID)
 	return nil
 }
 
+// Consume inicia el consumo de mensajes de la cola
+func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Context, services.ProductoEvent) error) error {
+	// Configurar el consumer
+	msgs, err := r.channel.Consume(
+		r.queue.Name, // queue
+		"",           // consumer
+		true,         // auto-ack
+		false,        // exclusive
+		false,        // no-local
+		false,        // no-wait
+		nil,          // args
+	)
+	if err != nil {
+		return fmt.Errorf("failed to register consumer: %w", err)
+	}
+
+	log.Printf("Consumer registered for queue: %s", r.queue.Name)
+
+	// Loop infinito para consumir mensajes
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("Consumer context cancelled")
+			return ctx.Err()
+
+		case msg := <-msgs:
+			// Deserializar mensaje
+			var event services.ProductoEvent
+			if err := json.Unmarshal(msg.Body, &event); err != nil {
+				log.Printf("Error unmarshalling message: %v", err)
+				continue
+			}
+
+			log.Printf("Received message: action=%s, item_id=%s", event.Action, event.ItemID)
+
+			// Procesar mensaje
+			if err := handler(ctx, event); err != nil {
+				log.Printf("Error handling message: %v", err)
+			}
+		}
+	}
+}

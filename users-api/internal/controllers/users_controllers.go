@@ -12,7 +12,7 @@ import (
 
 // AuthService define la lógica de negocio para autenticación
 type AuthService interface {
-	Register(ctx context.Context, req domain.RegisterRequest) (domain.Usuario, error)
+	Register(ctx context.Context, req domain.RegisterRequest) (domain.LoginResponse, error)
 	Login(ctx context.Context, req domain.LoginRequest) (domain.LoginResponse, error)
 	GetUserByID(ctx context.Context, id uint64) (domain.Usuario, error)
 }
@@ -41,7 +41,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 	}
 
 	// 2. Llamar al servicio
-	user, err := c.service.Register(ctx.Request.Context(), req)
+	response, err := c.service.Register(ctx.Request.Context(), req)
 	if err != nil {
 		// Determinar código de error apropiado
 		statusCode := http.StatusInternalServerError
@@ -63,11 +63,8 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
-	// 3. Responder con éxito
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "Usuario registrado exitosamente",
-		"user":    user,
-	})
+	// 3. Responder con éxito (token y usuario)
+	ctx.JSON(http.StatusCreated, response)
 }
 
 // Login maneja POST /auth/login
