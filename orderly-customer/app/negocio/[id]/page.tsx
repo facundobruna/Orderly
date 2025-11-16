@@ -18,6 +18,8 @@ export default function NegocioPage() {
   const params = useParams();
   const negocioId = parseInt(params.id as string);
 
+  console.log("[NegocioPage] Cargando página de negocio:", negocioId);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoria, setSelectedCategoria] = useState<string>("");
   const [selectedProducto, setSelectedProducto] = useState<Producto | null>(null);
@@ -28,18 +30,37 @@ export default function NegocioPage() {
   // Fetch negocio info
   const { data: negocio } = useQuery({
     queryKey: ["negocio", negocioId],
-    queryFn: () => authApi.getNegocioById(negocioId),
+    queryFn: async () => {
+      console.log("[NegocioPage] Obteniendo información del negocio:", negocioId);
+      try {
+        const result = await authApi.getNegocioById(negocioId);
+        console.log("[NegocioPage] Negocio obtenido:", result.nombre);
+        return result;
+      } catch (err) {
+        console.error("[NegocioPage] Error al obtener negocio:", err);
+        throw err;
+      }
+    },
   });
 
   // Fetch productos
   const { data: productos, isLoading, error } = useQuery({
     queryKey: ["productos", negocioId, selectedCategoria],
-    queryFn: () =>
-      productsApi.getProducts({
-        negocio_id: negocioId,
-        categoria: selectedCategoria || undefined,
-        disponible: true,
-      }),
+    queryFn: async () => {
+      console.log("[NegocioPage] Obteniendo productos para negocio:", negocioId, "categoría:", selectedCategoria || "todas");
+      try {
+        const result = await productsApi.getProducts({
+          negocio_id: negocioId,
+          categoria: selectedCategoria || undefined,
+          disponible: true,
+        });
+        console.log("[NegocioPage] Productos obtenidos:", Array.isArray(result) ? result.length : 0, "productos");
+        return result;
+      } catch (err) {
+        console.error("[NegocioPage] Error al obtener productos:", err);
+        throw err;
+      }
+    },
   });
 
   // Ensure productos is always an array
@@ -62,6 +83,14 @@ export default function NegocioPage() {
     return matchesSearch;
   });
 
+  console.log("[NegocioPage] Productos filtrados:", filteredProductos.length, "de", productosArray.length, "total");
+  if (searchQuery) {
+    console.log("[NegocioPage] Búsqueda activa:", searchQuery);
+  }
+  if (selectedCategoria) {
+    console.log("[NegocioPage] Categoría seleccionada:", selectedCategoria);
+  }
+
   const handleAddToCart = (
     producto: Producto,
     cantidad: number,
@@ -69,7 +98,15 @@ export default function NegocioPage() {
     modificadores?: Modificador[],
     observaciones?: string
   ) => {
+    console.log("[NegocioPage] Agregando al carrito:", {
+      producto: producto.nombre,
+      cantidad,
+      variante: variante?.nombre,
+      modificadores: modificadores?.map(m => m.nombre),
+      observaciones,
+    });
     addItem(producto, cantidad, variante, modificadores, observaciones);
+    console.log("[NegocioPage] Producto agregado al carrito exitosamente");
   };
 
   return (

@@ -58,17 +58,38 @@ export default function OrdenPage() {
   const params = useParams();
   const ordenId = params.id as string;
 
+  console.log("[OrdenPage] Renderizando página de orden:", ordenId);
+
   const {
     data: orden,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["orden", ordenId],
-    queryFn: () => ordersApi.getOrderById(ordenId),
+    queryFn: async () => {
+      console.log("[OrdenPage] Obteniendo datos de orden:", ordenId);
+      try {
+        const result = await ordersApi.getOrderById(ordenId);
+        console.log("[OrdenPage] Orden obtenida exitosamente:", {
+          id: result.id,
+          estado: result.estado,
+          total: result.total,
+          items: result.items.length,
+        });
+        return result;
+      } catch (err) {
+        console.error("[OrdenPage] Error al obtener orden:", err);
+        throw err;
+      }
+    },
     refetchInterval: 10000, // Refetch every 10 seconds
+    onSuccess: (data) => {
+      console.log("[OrdenPage] Orden actualizada - Estado:", data.estado);
+    },
   });
 
   if (isLoading) {
+    console.log("[OrdenPage] Cargando orden...");
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -82,6 +103,8 @@ export default function OrdenPage() {
   }
 
   if (error || !orden) {
+    console.error("[OrdenPage] Error al cargar orden:", error);
+    console.log("[OrdenPage] Orden no encontrada o error en la carga");
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -105,6 +128,15 @@ export default function OrdenPage() {
 
   const statusInfo = statusConfig[orden.estado];
   const StatusIcon = statusInfo.icon;
+
+  console.log("[OrdenPage] Mostrando orden:", {
+    id: orden.id,
+    estado: orden.estado,
+    statusLabel: statusInfo.label,
+    total: orden.total,
+    mesa: orden.mesa,
+    pagado: orden.pago.pagado,
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
