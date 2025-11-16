@@ -275,3 +275,35 @@ func (r *MongoOrdersRepository) Delete(ctx context.Context, id string) error {
 
 	return nil
 }
+
+// FindByID es un wrapper de GetByID que retorna un puntero
+func (r *MongoOrdersRepository) FindByID(ctx context.Context, id string) (*domain.Orden, error) {
+	orden, err := r.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &orden, nil
+}
+
+// UpdateOrden actualiza una orden completa
+func (r *MongoOrdersRepository) UpdateOrden(ctx context.Context, orden *domain.Orden) error {
+	objectID, err := primitive.ObjectIDFromHex(orden.ID)
+	if err != nil {
+		return fmt.Errorf("invalid id: %w", err)
+	}
+
+	ordenDAO := dao.FromDomain(*orden)
+	ordenDAO.ID = objectID
+	ordenDAO.UpdatedAt = time.Now().UTC()
+
+	update := bson.M{
+		"$set": ordenDAO,
+	}
+
+	_, err = r.col.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	if err != nil {
+		return fmt.Errorf("error updating orden: %w", err)
+	}
+
+	return nil
+}

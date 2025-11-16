@@ -1,12 +1,13 @@
 package repository
 
 import (
-	"users-api/internal/dao"
 	"context"
 	"errors"
 	"fmt"
 	"log"
 	"time"
+	"users-api/internal/dao"
+	"users-api/internal/domain"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -46,8 +47,27 @@ func NewMySQLUsersRepository(ctx context.Context, user, password, host, port, db
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	// Auto-migrar tablas
-	if err := db.AutoMigrate(&dao.Usuario{}, &dao.Negocio{}); err != nil {
+	if err := db.AutoMigrate(&dao.Usuario{}, &dao.Negocio{}, &domain.Mesa{}); err != nil {
 		log.Fatalf("Error en auto-migrate: %v", err)
+	}
+
+	// Crear foreign key constraint manualmente para mesas -> negocios
+	// Esto es necesario porque el campo Negocio está marcado con gorm:"-"
+	if db.Migrator().HasTable(&domain.Mesa{}) {
+		if !db.Migrator().HasConstraint(&domain.Mesa{}, "fk_mesas_negocio") {
+			err := db.Exec(`
+				ALTER TABLE mesas
+				ADD CONSTRAINT fk_mesas_negocio
+				FOREIGN KEY (negocio_id)
+				REFERENCES negocios(id_negocio)
+				ON DELETE CASCADE
+			`).Error
+			if err != nil {
+				log.Printf("⚠️  Warning: No se pudo crear foreign key para mesas: %v (puede que ya exista)", err)
+			} else {
+				log.Println("✅ Foreign key constraint creada para mesas")
+			}
+		}
 	}
 
 	log.Println("✅ Conexión a MySQL exitosa y tablas migradas")

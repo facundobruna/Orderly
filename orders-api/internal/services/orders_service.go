@@ -85,8 +85,11 @@ func (s *OrdersService) CreateOrder(ctx context.Context, req domain.CreateOrdenR
 
 	t, err := s.usersClient.ValidateNegocioExists(ctx, req.NegocioID)
 	if t == false || err != nil {
-		log.Fatalf("error validando el negocio: %w", err)
-		return domain.Orden{}, err
+		log.Printf("error validando el negocio: %v", err)
+		if err != nil {
+			return domain.Orden{}, fmt.Errorf("error al validar negocio: %w", err)
+		}
+		return domain.Orden{}, fmt.Errorf("el negocio con ID %s no existe", req.NegocioID)
 	}
 
 	items, err := s.processItems(ctx, req.Items)
