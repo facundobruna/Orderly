@@ -141,16 +141,20 @@ export default function OrdenPage() {
                     <p className="font-semibold">#{orden.mesa}</p>
                   </div>
                 )}
-                <div>
-                  <p className="text-muted-foreground">Método de Pago</p>
-                  <p className="font-semibold capitalize">{orden.pago.metodo}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Estado de Pago</p>
-                  <Badge variant={orden.pago.pagado ? "success" : "secondary"}>
-                    {orden.pago.pagado ? "Pagado" : "Pendiente"}
-                  </Badge>
-                </div>
+                {orden.pago && (
+                  <>
+                    <div>
+                      <p className="text-muted-foreground">Método de Pago</p>
+                      <p className="font-semibold capitalize">{orden.pago.metodo}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Estado de Pago</p>
+                      <Badge variant={orden.pago.pagado ? "success" : "secondary"}>
+                        {orden.pago.pagado ? "Pagado" : "Pendiente"}
+                      </Badge>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
