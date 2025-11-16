@@ -23,11 +23,13 @@ export default function NegociosPage() {
     try {
       setIsLoading(true);
       setError("");
+      console.log("[NegociosPage] Cargando negocios...");
       const negocios = await negociosApi.getMy();
+      console.log("[NegociosPage] Negocios cargados:", negocios);
       setNegocios(negocios);
     } catch (err: any) {
-      console.error("Error loading negocios:", err);
-      console.error("Error response:", err.response?.data);
+      console.error("[NegociosPage] Error loading negocios:", err);
+      console.error("[NegociosPage] Error response:", err.response?.data);
       setError(err.response?.data?.error || "Error al cargar los negocios");
       setNegocios([]);
     } finally {
@@ -42,10 +44,12 @@ export default function NegociosPage() {
 
     try {
       setDeletingId(id);
+      console.log("[NegociosPage] Eliminando negocio:", id);
       await negociosApi.delete(id);
+      console.log("[NegociosPage] Negocio eliminado exitosamente");
       setNegocios(negocios.filter((n) => n.id_negocio !== id));
     } catch (error) {
-      console.error("Error deleting negocio:", error);
+      console.error("[NegociosPage] Error deleting negocio:", error);
       alert("Error al eliminar el negocio");
     } finally {
       setDeletingId(null);

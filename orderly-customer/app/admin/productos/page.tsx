@@ -29,26 +29,35 @@ export default function ProductosPage() {
 
   const loadNegocios = async () => {
     try {
+      console.log("[ProductosPage] Cargando negocios...");
       const negocios = await negociosApi.getMy();
+      console.log("[ProductosPage] Negocios cargados:", negocios);
       setNegocios(negocios);
       if (negocios.length > 0) {
         setSelectedNegocio(negocios[0].id_negocio);
+        console.log("[ProductosPage] Negocio seleccionado por defecto:", negocios[0].id_negocio);
       }
     } catch (error) {
-      console.error("Error loading negocios:", error);
+      console.error("[ProductosPage] Error loading negocios:", error);
     }
   };
 
   const loadProductos = async () => {
-    if (!selectedNegocio) return;
+    if (!selectedNegocio) {
+      console.log("[ProductosPage] No hay negocio seleccionado");
+      return;
+    }
 
     try {
       setIsLoading(true);
+      console.log("[ProductosPage] Cargando productos para negocio:", selectedNegocio);
       const data = await productsApi.getProducts({ negocio_id: String(selectedNegocio) });
+      console.log("[ProductosPage] Productos recibidos:", data);
       const productosArray = Array.isArray(data) ? data : [];
+      console.log("[ProductosPage] Productos array:", productosArray.length, "productos");
       setProductos(productosArray);
     } catch (error) {
-      console.error("Error loading productos:", error);
+      console.error("[ProductosPage] Error loading productos:", error);
     } finally {
       setIsLoading(false);
     }
@@ -61,10 +70,12 @@ export default function ProductosPage() {
 
     try {
       setDeletingId(id);
+      console.log("[ProductosPage] Eliminando producto:", id);
       await productsApi.deleteProduct(id);
+      console.log("[ProductosPage] Producto eliminado exitosamente");
       setProductos(productos.filter((p) => p.id !== id));
     } catch (error) {
-      console.error("Error deleting producto:", error);
+      console.error("[ProductosPage] Error deleting producto:", error);
       alert("Error al eliminar el producto");
     } finally {
       setDeletingId(null);

@@ -47,36 +47,46 @@ export default function OrdenesPage() {
 
   const loadNegocios = async () => {
     try {
+      console.log("[OrdenesPage] Cargando negocios...");
       const negocios = await negociosApi.getMy();
+      console.log("[OrdenesPage] Negocios cargados:", negocios);
       setNegocios(negocios);
       if (negocios.length > 0) {
         setSelectedNegocio(negocios[0].id_negocio);
+        console.log("[OrdenesPage] Negocio seleccionado por defecto:", negocios[0].id_negocio);
       }
     } catch (error) {
-      console.error("Error loading negocios:", error);
+      console.error("[OrdenesPage] Error loading negocios:", error);
     }
   };
 
   const loadOrdenes = async () => {
-    if (!selectedNegocio) return;
+    if (!selectedNegocio) {
+      console.log("[OrdenesPage] No hay negocio seleccionado");
+      return;
+    }
 
     try {
       setIsLoading(true);
+      console.log("[OrdenesPage] Cargando órdenes para negocio:", selectedNegocio, "filtro:", filter);
       // API returns Orden[] directly, not paginated
       const ordenesData = await ordersApi.getOrders({ negocio_id: String(selectedNegocio) });
+      console.log("[OrdenesPage] Órdenes recibidas:", ordenesData);
       let orders = Array.isArray(ordenesData) ? ordenesData : [];
 
       // Filter based on selection
       if (filter === "activas") {
         orders = orders.filter(o => !["entregado", "cancelado"].includes(o.estado));
+        console.log("[OrdenesPage] Órdenes activas filtradas:", orders.length);
       }
 
       // Sort by date, newest first
       orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+      console.log("[OrdenesPage] Órdenes finales:", orders.length, "órdenes");
       setOrdenes(orders);
     } catch (error) {
-      console.error("Error loading ordenes:", error);
+      console.error("[OrdenesPage] Error loading ordenes:", error);
     } finally {
       setIsLoading(false);
     }
@@ -85,10 +95,12 @@ export default function OrdenesPage() {
   const handleUpdateStatus = async (ordenId: string, nuevoEstado: string) => {
     try {
       setUpdatingId(ordenId);
+      console.log("[OrdenesPage] Actualizando estado de orden:", ordenId, "a:", nuevoEstado);
       await ordersApi.updateOrderStatus(ordenId, { nuevo_estado: nuevoEstado });
+      console.log("[OrdenesPage] Estado actualizado exitosamente");
       setOrdenes(ordenes.map(o => o.id === ordenId ? { ...o, estado: nuevoEstado } : o));
     } catch (error) {
-      console.error("Error updating order status:", error);
+      console.error("[OrdenesPage] Error updating order status:", error);
       alert("Error al actualizar el estado");
     } finally {
       setUpdatingId(null);

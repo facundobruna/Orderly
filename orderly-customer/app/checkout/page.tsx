@@ -58,6 +58,7 @@ export default function CheckoutPage() {
     setError("");
 
     try {
+      console.log("[CheckoutPage] Iniciando creación de orden...");
       // Convertir cart items a formato que espera el backend
       const orderItems = items.map((item) => ({
         producto_id: item.producto.id,
@@ -76,10 +77,13 @@ export default function CheckoutPage() {
         observaciones,
       };
 
+      console.log("[CheckoutPage] Datos de orden:", ordenData);
       const orden = await ordersApi.createOrder(ordenData);
+      console.log("[CheckoutPage] Orden creada:", orden);
 
       // Si es división de cuenta, crear orden grupal
       if (splitEnabled && numPersonas > 1) {
+        console.log("[CheckoutPage] Creando orden grupal para", numPersonas, "personas");
         await ordersApi.createGroupOrder({
           orden_id: orden.id,
           divisiones: numPersonas,
@@ -88,17 +92,22 @@ export default function CheckoutPage() {
 
       // Si es Mercado Pago, redirigir al checkout
       if (paymentMethod === "mercadopago") {
+        console.log("[CheckoutPage] Método de pago: Mercado Pago");
         // TODO: Integrar con payments-api para obtener preference_id
         // y renderizar el checkout de MP
         alert("Integración con Mercado Pago en proceso...");
       }
 
       // Limpiar carrito
+      console.log("[CheckoutPage] Limpiando carrito...");
       clearCart();
 
       // Redirigir a página de orden
+      console.log("[CheckoutPage] Redirigiendo a orden:", orden.id);
       router.push(`/orden/${orden.id}`);
     } catch (err: any) {
+      console.error("[CheckoutPage] Error al crear orden:", err);
+      console.error("[CheckoutPage] Error response:", err.response?.data);
       setError(
         err.response?.data?.error || "Error al crear la orden. Intenta nuevamente."
       );
