@@ -215,12 +215,12 @@ export default function ProductosPage() {
                     </span>
                   </div>
 
-                  {(producto.variantes.length > 0 || producto.modificadores.length > 0) && (
+                  {((producto.variantes && producto.variantes.length > 0) || (producto.modificadores && producto.modificadores.length > 0)) && (
                     <div className="text-xs text-gray-600 mb-4 space-y-1">
-                      {producto.variantes.length > 0 && (
+                      {producto.variantes && producto.variantes.length > 0 && (
                         <div>• {producto.variantes.length} variantes</div>
                       )}
-                      {producto.modificadores.length > 0 && (
+                      {producto.modificadores && producto.modificadores.length > 0 && (
                         <div>• {producto.modificadores.length} modificadores</div>
                       )}
                     </div>
