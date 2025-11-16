@@ -20,7 +20,7 @@ export default function NuevoProductoPage() {
   const [error, setError] = useState("");
 
   const [formData, setFormData] = useState<CreateProductoRequest>({
-    negocio_id: 0,
+    negocio_id: "",
     sucursal_id: "",
     nombre: "",
     descripcion: "",
@@ -47,7 +47,7 @@ export default function NuevoProductoPage() {
       if (data.length > 0) {
         setFormData(prev => ({
           ...prev,
-          negocio_id: data[0].id_negocio,
+          negocio_id: String(data[0].id_negocio),
           sucursal_id: data[0].sucursal,
         }));
       }
@@ -171,10 +171,10 @@ export default function NuevoProductoPage() {
                     name="negocio_id"
                     value={formData.negocio_id}
                     onChange={(e) => {
-                      const negocio = negocios.find(n => n.id_negocio === Number(e.target.value));
+                      const negocio = negocios.find(n => String(n.id_negocio) === e.target.value);
                       setFormData({
                         ...formData,
-                        negocio_id: Number(e.target.value),
+                        negocio_id: e.target.value,
                         sucursal_id: negocio?.sucursal || "",
                       });
                     }}

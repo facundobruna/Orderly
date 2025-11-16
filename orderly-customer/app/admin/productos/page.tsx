@@ -44,7 +44,7 @@ export default function ProductosPage() {
 
     try {
       setIsLoading(true);
-      const data = await productsApi.getProducts({ negocio_id: selectedNegocio });
+      const data = await productsApi.getProducts({ negocio_id: String(selectedNegocio) });
       const productosArray = Array.isArray(data) ? data : [];
       setProductos(productosArray);
     } catch (error) {

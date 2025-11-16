@@ -11,7 +11,7 @@ export interface Modificador {
 
 export interface Producto {
   id: string;
-  negocio_id: number;
+  negocio_id: string;
   sucursal_id: string;
   nombre: string;
   descripcion: string;
@@ -27,7 +27,7 @@ export interface Producto {
 }
 
 export interface CreateProductoRequest {
-  negocio_id: number;
+  negocio_id: string;
   sucursal_id: string;
   nombre: string;
   descripcion: string;
@@ -65,7 +65,7 @@ export interface ProductQuoteResponse {
 }
 
 export interface ProductFilters {
-  negocio_id?: number;
+  negocio_id?: string;
   sucursal_id?: string;
   categoria?: string;
   disponible?: boolean;

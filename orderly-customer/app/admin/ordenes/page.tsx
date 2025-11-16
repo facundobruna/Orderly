@@ -11,7 +11,8 @@ import { formatCurrency } from "@/lib/utils";
 
 const ESTADO_COLORS = {
   pendiente: "bg-yellow-100 text-yellow-800",
-  preparando: "bg-blue-100 text-blue-800",
+  aceptado: "bg-purple-100 text-purple-800",
+  en_preparacion: "bg-blue-100 text-blue-800",
   listo: "bg-green-100 text-green-800",
   entregado: "bg-gray-100 text-gray-800",
   cancelado: "bg-red-100 text-red-800",
@@ -19,7 +20,8 @@ const ESTADO_COLORS = {
 
 const ESTADO_LABELS = {
   pendiente: "Pendiente",
-  preparando: "Preparando",
+  aceptado: "Aceptado",
+  en_preparacion: "En Preparación",
   listo: "Listo",
   entregado: "Entregado",
   cancelado: "Cancelado",
@@ -70,7 +72,7 @@ export default function OrdenesPage() {
       }
 
       // Sort by date, newest first
-      orders.sort((a, b) => new Date(b.creado_en).getTime() - new Date(a.creado_en).getTime());
+      orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setOrdenes(orders);
     } catch (error) {
@@ -83,7 +85,7 @@ export default function OrdenesPage() {
   const handleUpdateStatus = async (ordenId: string, nuevoEstado: string) => {
     try {
       setUpdatingId(ordenId);
-      await ordersApi.updateOrderStatus(ordenId, { estado: nuevoEstado });
+      await ordersApi.updateOrderStatus(ordenId, { nuevo_estado: nuevoEstado });
       setOrdenes(ordenes.map(o => o.id === ordenId ? { ...o, estado: nuevoEstado } : o));
     } catch (error) {
       console.error("Error updating order status:", error);
@@ -95,8 +97,9 @@ export default function OrdenesPage() {
 
   const getNextStatus = (currentStatus: string): string | null => {
     const statusFlow: Record<string, string> = {
-      pendiente: "preparando",
-      preparando: "listo",
+      pendiente: "aceptado",
+      aceptado: "en_preparacion",
+      en_preparacion: "listo",
       listo: "entregado",
     };
     return statusFlow[currentStatus] || null;
@@ -182,7 +185,7 @@ export default function OrdenesPage() {
                         <CardTitle className="text-lg">Orden #{orden.id.slice(0, 8)}</CardTitle>
                         <p className="text-sm text-gray-600 mt-1">
                           {orden.mesa && `Mesa ${orden.mesa} • `}
-                          {new Date(orden.creado_en).toLocaleString()}
+                          {new Date(orden.created_at).toLocaleString()}
                         </p>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${ESTADO_COLORS[orden.estado as keyof typeof ESTADO_COLORS]}`}>

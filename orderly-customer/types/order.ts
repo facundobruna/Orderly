@@ -32,9 +32,9 @@ export interface Pago {
 
 export interface Orden {
   id: string;
-  negocio_id: number;
+  negocio_id: string;
   sucursal_id: string;
-  usuario_id?: number;
+  usuario_id?: string;
   mesa?: string;
   items: ItemOrden[];
   subtotal: number;
@@ -66,7 +66,7 @@ export interface CreateOrdenRequest {
 }
 
 export interface UpdateOrderStatusRequest {
-  estado: OrderStatus;
+  nuevo_estado: OrderStatus;
 }
 
 // Para división de pagos (nueva funcionalidad)
