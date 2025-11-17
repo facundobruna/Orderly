@@ -30,6 +30,10 @@ export const ordersApi = {
     return response.data.results || [];
   },
 
+  async getUserOrders(userId: string): Promise<Orden[]> {
+    return this.getOrders({ usuario_id: userId });
+  },
+
   async getOrderById(id: string): Promise<Orden> {
     const response = await ordersClient.get<Orden>(`/orders/${id}`);
     return response.data;

@@ -8,24 +8,44 @@ import {
   CreateNegocioRequest,
 } from "@/types";
 
+// Helper to normalize user data from backend
+function normalizeUser(user: any): User {
+  return {
+    id_usuario: user.id_usuario || user.id || user.ID,
+    nombre: user.nombre,
+    apellido: user.apellido,
+    email: user.email,
+    username: user.username,
+    rol: user.rol,
+    activo: user.activo,
+    creado_en: user.creado_en,
+  };
+}
+
 export const authApi = {
   // Auth endpoints
   async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await usersClient.post<AuthResponse>("/auth/login", data);
-    return response.data;
+    const response = await usersClient.post<any>("/auth/login", data);
+    return {
+      token: response.data.token,
+      user: normalizeUser(response.data.user),
+    };
   },
 
   async register(data: RegisterRequest): Promise<AuthResponse> {
-    const response = await usersClient.post<AuthResponse>(
+    const response = await usersClient.post<any>(
       "/auth/register",
       data
     );
-    return response.data;
+    return {
+      token: response.data.token,
+      user: normalizeUser(response.data.user),
+    };
   },
 
   async getMe(): Promise<User> {
-    const response = await usersClient.get<User>("/users/me");
-    return response.data;
+    const response = await usersClient.get<any>("/users/me");
+    return normalizeUser(response.data);
   },
 
   async getUserById(id: number): Promise<User> {

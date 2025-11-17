@@ -153,7 +153,7 @@ export default function OrdenPage() {
     statusLabel: statusInfo.label,
     total: orden.total,
     mesa: orden.mesa,
-    pagado: orden.pago.pagado,
+    pagado: orden.pago?.pagado,
   });
 
   return (
@@ -246,7 +246,7 @@ export default function OrdenPage() {
               <CardTitle>Detalle del Pedido</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {orden.items.map((item, index) => (
+              {orden.items?.map((item, index) => (
                 <div
                   key={index}
                   className="flex justify-between items-start border-b last:border-0 pb-4 last:pb-0"
@@ -260,7 +260,7 @@ export default function OrdenPage() {
                         • {item.variante_seleccionada.nombre}
                       </p>
                     )}
-                    {item.modificadores_seleccionados.length > 0 && (
+                    {item.modificadores_seleccionados?.length > 0 && (
                       <div className="text-sm text-muted-foreground">
                         {item.modificadores_seleccionados.map((mod, i) => (
                           <p key={i}>• {mod.nombre}</p>
