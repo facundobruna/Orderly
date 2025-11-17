@@ -269,10 +269,12 @@ export default function CheckoutPage() {
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>{formatCurrency(subtotal)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Impuestos (10%)</span>
-                    <span>{formatCurrency(impuestos)}</span>
-                  </div>
+                  {impuestos > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Impuestos</span>
+                      <span>{formatCurrency(impuestos)}</span>
+                    </div>
+                  )}
                   {mesa && (
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Mesa</span>

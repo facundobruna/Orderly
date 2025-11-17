@@ -26,7 +26,7 @@ interface CartState {
   getTotal: () => number;
 }
 
-const TAX_RATE = 0.1; // 10% impuestos
+const TAX_RATE = 0; // 0% - Los impuestos ya están incluidos en los precios
 
 export const useCartStore = create<CartState>()(
   persist(

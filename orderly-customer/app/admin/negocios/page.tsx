@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { negociosApi } from "@/lib/api";
 import { Negocio } from "@/types";
-import { Plus, Store, MapPin, Phone, Edit, Trash2 } from "lucide-react";
+import { Plus, Store, MapPin, Phone, Edit, Trash2, BarChart3 } from "lucide-react";
 import Link from "next/link";
 
 export default function NegociosPage() {
@@ -160,10 +160,15 @@ export default function NegociosPage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Link href={`/admin/negocios/${negocio.id_negocio}`} className="flex-1">
-                      <Button variant="outline" className="w-full">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
+                    <Link href={`/admin/negocios/${negocio.id_negocio}/estadisticas`} className="flex-1">
+                      <Button variant="default" className="w-full">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Estadísticas
+                      </Button>
+                    </Link>
+                    <Link href={`/admin/negocios/${negocio.id_negocio}`}>
+                      <Button variant="outline">
+                        <Edit className="h-4 w-4" />
                       </Button>
                     </Link>
                     <Button
