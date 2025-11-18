@@ -30,19 +30,19 @@ export const productsApi = {
   },
 
   async createProduct(data: CreateProductoRequest): Promise<Producto> {
-    const response = await productsClient.post<Producto>("/products", data);
-    return response.data;
+    const response = await productsClient.post<{message: string; producto: Producto}>("/products", data);
+    return response.data.producto;
   },
 
   async updateProduct(
     id: string,
     data: Partial<CreateProductoRequest>
   ): Promise<Producto> {
-    const response = await productsClient.put<Producto>(
+    const response = await productsClient.put<{message: string; producto: Producto}>(
       `/products/${id}`,
       data
     );
-    return response.data;
+    return response.data.producto;
   },
 
   async deleteProduct(id: string): Promise<void> {
@@ -65,7 +65,7 @@ export const productsApi = {
   async searchProducts(params: {
     query?: string;
     categoria?: string;
-    negocio_id?: number;
+    negocio_id?: string;
   }): Promise<Producto[]> {
     const response = await productsClient.get<Producto[]>("/products/search", {
       params,

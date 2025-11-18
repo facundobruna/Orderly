@@ -30,10 +30,12 @@ export function CartSummary({
             <span className="text-muted-foreground">Subtotal</span>
             <span>{formatCurrency(subtotal)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Impuestos (10%)</span>
-            <span>{formatCurrency(impuestos)}</span>
-          </div>
+          {impuestos > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Impuestos</span>
+              <span>{formatCurrency(impuestos)}</span>
+            </div>
+          )}
           <div className="border-t pt-2 mt-2">
             <div className="flex justify-between text-lg font-bold">
               <span>Total</span>

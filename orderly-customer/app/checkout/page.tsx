@@ -35,13 +35,27 @@ export default function CheckoutPage() {
   const [observaciones, setObservaciones] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [orderCreated, setOrderCreated] = useState<{ id: string; numero: string } | null>(null);
 
   // Redirect to cart if empty - use useEffect to avoid updating Router during render
   useEffect(() => {
-    if (items.length === 0) {
+    if (items.length === 0 && !orderCreated) {
       router.push("/cart");
     }
-  }, [items.length, router]);
+  }, [items.length, router, orderCreated]);
+
+  // Redirect to order page after showing success message
+  useEffect(() => {
+    if (orderCreated) {
+      console.log("[CheckoutPage] Pedido creado exitosamente, redirigiendo en 3 segundos...");
+      const timer = setTimeout(() => {
+        console.log("[CheckoutPage] Redirigiendo a orden:", orderCreated.id);
+        router.push(`/orden/${orderCreated.id}?success=true`);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [orderCreated, router]);
 
   // Don't render if cart is empty
   if (items.length === 0) {
@@ -58,6 +72,7 @@ export default function CheckoutPage() {
     setError("");
 
     try {
+      console.log("[CheckoutPage] Iniciando creación de orden...");
       // Convertir cart items a formato que espera el backend
       const orderItems = items.map((item) => ({
         producto_id: item.producto.id,
@@ -76,10 +91,13 @@ export default function CheckoutPage() {
         observaciones,
       };
 
+      console.log("[CheckoutPage] Datos de orden:", ordenData);
       const orden = await ordersApi.createOrder(ordenData);
+      console.log("[CheckoutPage] Orden creada:", orden);
 
       // Si es división de cuenta, crear orden grupal
       if (splitEnabled && numPersonas > 1) {
+        console.log("[CheckoutPage] Creando orden grupal para", numPersonas, "personas");
         await ordersApi.createGroupOrder({
           orden_id: orden.id,
           divisiones: numPersonas,
@@ -88,17 +106,25 @@ export default function CheckoutPage() {
 
       // Si es Mercado Pago, redirigir al checkout
       if (paymentMethod === "mercadopago") {
+        console.log("[CheckoutPage] Método de pago: Mercado Pago");
         // TODO: Integrar con payments-api para obtener preference_id
         // y renderizar el checkout de MP
         alert("Integración con Mercado Pago en proceso...");
       }
 
       // Limpiar carrito
+      console.log("[CheckoutPage] Limpiando carrito...");
       clearCart();
 
-      // Redirigir a página de orden
-      router.push(`/orden/${orden.id}`);
+      // Mostrar mensaje de éxito y preparar redirección
+      console.log("[CheckoutPage] Mostrando confirmación de pedido exitoso");
+      setOrderCreated({
+        id: orden.id,
+        numero: orden.id.slice(-8),
+      });
     } catch (err: any) {
+      console.error("[CheckoutPage] Error al crear orden:", err);
+      console.error("[CheckoutPage] Error response:", err.response?.data);
       setError(
         err.response?.data?.error || "Error al crear la orden. Intenta nuevamente."
       );
@@ -110,6 +136,51 @@ export default function CheckoutPage() {
   const subtotal = getSubtotal();
   const impuestos = getImpuestos();
   const total = getTotal();
+
+  // Show success message after order is created
+  if (orderCreated) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-12">
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="pt-12 pb-12 text-center">
+              <div className="mb-6">
+                <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-100 mb-4">
+                  <svg
+                    className="w-12 h-12 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <h1 className="text-3xl font-bold text-green-600 mb-4">
+                ¡Pedido Realizado con Éxito!
+              </h1>
+              <p className="text-xl text-gray-700 mb-2">
+                Tu pedido #{orderCreated.numero} ha sido confirmado
+              </p>
+              <p className="text-gray-600 mb-8">
+                Serás redirigido automáticamente a la página de seguimiento en unos segundos...
+              </p>
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <span>Redirigiendo...</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -198,10 +269,12 @@ export default function CheckoutPage() {
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>{formatCurrency(subtotal)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Impuestos (10%)</span>
-                    <span>{formatCurrency(impuestos)}</span>
-                  </div>
+                  {impuestos > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Impuestos</span>
+                      <span>{formatCurrency(impuestos)}</span>
+                    </div>
+                  )}
                   {mesa && (
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Mesa</span>

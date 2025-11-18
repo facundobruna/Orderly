@@ -76,8 +76,8 @@ export function ProductDetail({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-background border-b p-4 flex justify-between items-center z-10">
+      <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto bg-white">
+        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
           <h2 className="text-xl font-bold">{producto.nombre}</h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5" />
@@ -226,7 +226,7 @@ export function ProductDetail({
         </div>
 
         {/* Footer con precio total y botón */}
-        <div className="sticky bottom-0 bg-background border-t p-4">
+        <div className="sticky bottom-0 bg-white border-t p-4">
           <div className="flex justify-between items-center mb-3">
             <span className="text-lg font-semibold">Total:</span>
             <span className="text-2xl font-bold text-primary">

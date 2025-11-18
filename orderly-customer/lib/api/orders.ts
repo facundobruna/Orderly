@@ -9,18 +9,29 @@ import {
 } from "@/types";
 
 interface GetOrdersParams {
-  negocio_id?: number;
+  negocio_id?: string;
   sucursal_id?: string;
-  usuario_id?: number;
+  usuario_id?: string;
   estado?: OrderStatus;
   mesa?: string;
+}
+
+interface PaginatedOrdersResponse {
+  page: number;
+  limit: number;
+  total: number;
+  results: Orden[];
 }
 
 export const ordersApi = {
   // Orders CRUD
   async getOrders(params?: GetOrdersParams): Promise<Orden[]> {
-    const response = await ordersClient.get<Orden[]>("/orders", { params });
-    return response.data;
+    const response = await ordersClient.get<PaginatedOrdersResponse>("/orders", { params });
+    return response.data.results || [];
+  },
+
+  async getUserOrders(userId: string): Promise<Orden[]> {
+    return this.getOrders({ usuario_id: userId });
   },
 
   async getOrderById(id: string): Promise<Orden> {
@@ -29,19 +40,19 @@ export const ordersApi = {
   },
 
   async createOrder(data: CreateOrdenRequest): Promise<Orden> {
-    const response = await ordersClient.post<Orden>("/orders", data);
-    return response.data;
+    const response = await ordersClient.post<{message: string; orden: Orden}>("/orders", data);
+    return response.data.orden;
   },
 
   async updateOrderStatus(
     id: string,
     data: UpdateOrderStatusRequest
   ): Promise<Orden> {
-    const response = await ordersClient.put<Orden>(
+    const response = await ordersClient.put<{message: string; orden: Orden}>(
       `/orders/${id}/status`,
       data
     );
-    return response.data;
+    return response.data.orden;
   },
 
   async cancelOrder(id: string): Promise<void> {

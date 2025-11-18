@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, User, Search } from "lucide-react";
+import { ShoppingCart, User, Search, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/store/cartStore";
@@ -60,11 +60,18 @@ export function Header({
           </Link>
 
           {user ? (
-            <Link href="/perfil">
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
+            <>
+              <Link href="/mis-ordenes">
+                <Button variant="ghost" size="icon" title="Mis Pedidos">
+                  <Receipt className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link href="/perfil">
+                <Button variant="ghost" size="icon" title="Mi Perfil">
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
+            </>
           ) : (
             <Link href="/login">
               <Button variant="ghost" size="sm">

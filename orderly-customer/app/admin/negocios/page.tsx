@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { negociosApi } from "@/lib/api";
 import { Negocio } from "@/types";
-import { Plus, Store, MapPin, Phone, Edit, Trash2 } from "lucide-react";
+import { Plus, Store, MapPin, Phone, Edit, Trash2, BarChart3 } from "lucide-react";
 import Link from "next/link";
 
 export default function NegociosPage() {
@@ -23,11 +23,13 @@ export default function NegociosPage() {
     try {
       setIsLoading(true);
       setError("");
+      console.log("[NegociosPage] Cargando negocios...");
       const negocios = await negociosApi.getMy();
+      console.log("[NegociosPage] Negocios cargados:", negocios);
       setNegocios(negocios);
     } catch (err: any) {
-      console.error("Error loading negocios:", err);
-      console.error("Error response:", err.response?.data);
+      console.error("[NegociosPage] Error loading negocios:", err);
+      console.error("[NegociosPage] Error response:", err.response?.data);
       setError(err.response?.data?.error || "Error al cargar los negocios");
       setNegocios([]);
     } finally {
@@ -42,10 +44,12 @@ export default function NegociosPage() {
 
     try {
       setDeletingId(id);
+      console.log("[NegociosPage] Eliminando negocio:", id);
       await negociosApi.delete(id);
+      console.log("[NegociosPage] Negocio eliminado exitosamente");
       setNegocios(negocios.filter((n) => n.id_negocio !== id));
     } catch (error) {
-      console.error("Error deleting negocio:", error);
+      console.error("[NegociosPage] Error deleting negocio:", error);
       alert("Error al eliminar el negocio");
     } finally {
       setDeletingId(null);
@@ -156,10 +160,15 @@ export default function NegociosPage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Link href={`/admin/negocios/${negocio.id_negocio}`} className="flex-1">
-                      <Button variant="outline" className="w-full">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
+                    <Link href={`/admin/negocios/${negocio.id_negocio}/estadisticas`} className="flex-1">
+                      <Button variant="default" className="w-full">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Estadísticas
+                      </Button>
+                    </Link>
+                    <Link href={`/admin/negocios/${negocio.id_negocio}`}>
+                      <Button variant="outline">
+                        <Edit className="h-4 w-4" />
                       </Button>
                     </Link>
                     <Button

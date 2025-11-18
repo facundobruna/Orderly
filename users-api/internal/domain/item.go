@@ -33,7 +33,7 @@ type Usuario struct {
 }
 
 type Negocio struct {
-	ID          uint64    `json:"id"`
+	ID          uint64    `json:"id_negocio"`
 	Nombre      string    `json:"nombre"`
 	Descripcion string    `json:"descripcion"`
 	Direccion   string    `json:"direccion"`

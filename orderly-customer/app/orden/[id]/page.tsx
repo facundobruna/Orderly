@@ -1,7 +1,8 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Clock, CheckCircle2, XCircle, ChefHat, Package } from "lucide-react";
 import { Header } from "@/components/shared/Header";
@@ -56,7 +57,26 @@ const statusConfig: Record<
 
 export default function OrdenPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const ordenId = params.id as string;
+  const isNewOrder = searchParams.get("success") === "true";
+
+  const [showSuccessBanner, setShowSuccessBanner] = useState(isNewOrder);
+
+  console.log("[OrdenPage] Renderizando página de orden:", ordenId);
+  if (isNewOrder) {
+    console.log("[OrdenPage] Orden recién creada, mostrando banner de bienvenida");
+  }
+
+  // Auto-hide success banner after 10 seconds
+  useEffect(() => {
+    if (showSuccessBanner) {
+      const timer = setTimeout(() => {
+        setShowSuccessBanner(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessBanner]);
 
   const {
     data: orden,
@@ -64,11 +84,30 @@ export default function OrdenPage() {
     error,
   } = useQuery({
     queryKey: ["orden", ordenId],
-    queryFn: () => ordersApi.getOrderById(ordenId),
+    queryFn: async () => {
+      console.log("[OrdenPage] Obteniendo datos de orden:", ordenId);
+      try {
+        const result = await ordersApi.getOrderById(ordenId);
+        console.log("[OrdenPage] Orden obtenida exitosamente:", {
+          id: result.id,
+          estado: result.estado,
+          total: result.total,
+          items: result.items.length,
+        });
+        return result;
+      } catch (err) {
+        console.error("[OrdenPage] Error al obtener orden:", err);
+        throw err;
+      }
+    },
     refetchInterval: 10000, // Refetch every 10 seconds
+    onSuccess: (data) => {
+      console.log("[OrdenPage] Orden actualizada - Estado:", data.estado);
+    },
   });
 
   if (isLoading) {
+    console.log("[OrdenPage] Cargando orden...");
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -82,6 +121,8 @@ export default function OrdenPage() {
   }
 
   if (error || !orden) {
+    console.error("[OrdenPage] Error al cargar orden:", error);
+    console.log("[OrdenPage] Orden no encontrada o error en la carga");
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -106,12 +147,52 @@ export default function OrdenPage() {
   const statusInfo = statusConfig[orden.estado];
   const StatusIcon = statusInfo.icon;
 
+  console.log("[OrdenPage] Mostrando orden:", {
+    id: orden.id,
+    estado: orden.estado,
+    statusLabel: statusInfo.label,
+    total: orden.total,
+    mesa: orden.mesa,
+    pagado: orden.pago?.pagado,
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
       <div className="container mx-auto px-4 py-6">
         <div className="max-w-3xl mx-auto">
+          {/* Success Banner for New Orders */}
+          {showSuccessBanner && (
+            <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-green-900 mb-2">
+                    ¡Tu pedido está en camino!
+                  </h3>
+                  <p className="text-green-800 mb-3">
+                    Tu pedido ha sido recibido y enviado a la cocina. Puedes hacer seguimiento del estado en tiempo real desde esta página.
+                  </p>
+                  <div className="flex items-center gap-2 text-sm text-green-700">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="font-medium">Esta página se actualiza automáticamente cada 10 segundos</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowSuccessBanner(false)}
+                  className="flex-shrink-0 text-green-600 hover:text-green-800"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Order Header */}
           <Card className="mb-6">
             <CardContent className="pt-6">
@@ -165,7 +246,7 @@ export default function OrdenPage() {
               <CardTitle>Detalle del Pedido</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {orden.items.map((item, index) => (
+              {orden.items?.map((item, index) => (
                 <div
                   key={index}
                   className="flex justify-between items-start border-b last:border-0 pb-4 last:pb-0"
@@ -179,7 +260,7 @@ export default function OrdenPage() {
                         • {item.variante_seleccionada.nombre}
                       </p>
                     )}
-                    {item.modificadores_seleccionados.length > 0 && (
+                    {item.modificadores_seleccionados?.length > 0 && (
                       <div className="text-sm text-muted-foreground">
                         {item.modificadores_seleccionados.map((mod, i) => (
                           <p key={i}>• {mod.nombre}</p>

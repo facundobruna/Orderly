@@ -11,7 +11,8 @@ import { formatCurrency } from "@/lib/utils";
 
 const ESTADO_COLORS = {
   pendiente: "bg-yellow-100 text-yellow-800",
-  preparando: "bg-blue-100 text-blue-800",
+  aceptado: "bg-purple-100 text-purple-800",
+  en_preparacion: "bg-blue-100 text-blue-800",
   listo: "bg-green-100 text-green-800",
   entregado: "bg-gray-100 text-gray-800",
   cancelado: "bg-red-100 text-red-800",
@@ -19,7 +20,8 @@ const ESTADO_COLORS = {
 
 const ESTADO_LABELS = {
   pendiente: "Pendiente",
-  preparando: "Preparando",
+  aceptado: "Aceptado",
+  en_preparacion: "En Preparación",
   listo: "Listo",
   entregado: "Entregado",
   cancelado: "Cancelado",
@@ -45,36 +47,46 @@ export default function OrdenesPage() {
 
   const loadNegocios = async () => {
     try {
+      console.log("[OrdenesPage] Cargando negocios...");
       const negocios = await negociosApi.getMy();
+      console.log("[OrdenesPage] Negocios cargados:", negocios);
       setNegocios(negocios);
       if (negocios.length > 0) {
         setSelectedNegocio(negocios[0].id_negocio);
+        console.log("[OrdenesPage] Negocio seleccionado por defecto:", negocios[0].id_negocio);
       }
     } catch (error) {
-      console.error("Error loading negocios:", error);
+      console.error("[OrdenesPage] Error loading negocios:", error);
     }
   };
 
   const loadOrdenes = async () => {
-    if (!selectedNegocio) return;
+    if (!selectedNegocio) {
+      console.log("[OrdenesPage] No hay negocio seleccionado");
+      return;
+    }
 
     try {
       setIsLoading(true);
+      console.log("[OrdenesPage] Cargando órdenes para negocio:", selectedNegocio, "filtro:", filter);
       // API returns Orden[] directly, not paginated
       const ordenesData = await ordersApi.getOrders({ negocio_id: String(selectedNegocio) });
+      console.log("[OrdenesPage] Órdenes recibidas:", ordenesData);
       let orders = Array.isArray(ordenesData) ? ordenesData : [];
 
       // Filter based on selection
       if (filter === "activas") {
         orders = orders.filter(o => !["entregado", "cancelado"].includes(o.estado));
+        console.log("[OrdenesPage] Órdenes activas filtradas:", orders.length);
       }
 
       // Sort by date, newest first
-      orders.sort((a, b) => new Date(b.creado_en).getTime() - new Date(a.creado_en).getTime());
+      orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+      console.log("[OrdenesPage] Órdenes finales:", orders.length, "órdenes");
       setOrdenes(orders);
     } catch (error) {
-      console.error("Error loading ordenes:", error);
+      console.error("[OrdenesPage] Error loading ordenes:", error);
     } finally {
       setIsLoading(false);
     }
@@ -83,10 +95,12 @@ export default function OrdenesPage() {
   const handleUpdateStatus = async (ordenId: string, nuevoEstado: string) => {
     try {
       setUpdatingId(ordenId);
-      await ordersApi.updateOrderStatus(ordenId, { estado: nuevoEstado });
+      console.log("[OrdenesPage] Actualizando estado de orden:", ordenId, "a:", nuevoEstado);
+      await ordersApi.updateOrderStatus(ordenId, { nuevo_estado: nuevoEstado });
+      console.log("[OrdenesPage] Estado actualizado exitosamente");
       setOrdenes(ordenes.map(o => o.id === ordenId ? { ...o, estado: nuevoEstado } : o));
     } catch (error) {
-      console.error("Error updating order status:", error);
+      console.error("[OrdenesPage] Error updating order status:", error);
       alert("Error al actualizar el estado");
     } finally {
       setUpdatingId(null);
@@ -95,8 +109,9 @@ export default function OrdenesPage() {
 
   const getNextStatus = (currentStatus: string): string | null => {
     const statusFlow: Record<string, string> = {
-      pendiente: "preparando",
-      preparando: "listo",
+      pendiente: "aceptado",
+      aceptado: "en_preparacion",
+      en_preparacion: "listo",
       listo: "entregado",
     };
     return statusFlow[currentStatus] || null;
@@ -182,7 +197,7 @@ export default function OrdenesPage() {
                         <CardTitle className="text-lg">Orden #{orden.id.slice(0, 8)}</CardTitle>
                         <p className="text-sm text-gray-600 mt-1">
                           {orden.mesa && `Mesa ${orden.mesa} • `}
-                          {new Date(orden.creado_en).toLocaleString()}
+                          {new Date(orden.created_at).toLocaleString()}
                         </p>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${ESTADO_COLORS[orden.estado as keyof typeof ESTADO_COLORS]}`}>
