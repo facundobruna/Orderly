@@ -7,6 +7,8 @@ export interface Negocio {
   sucursal: string;
   id_usuario: number;
   activo: boolean;
+  latitud?: number; // Coordenadas para geolocalización
+  longitud?: number;
   creado_en: string;
   slug?: string; // Para URLs amigables
   logo_url?: string;

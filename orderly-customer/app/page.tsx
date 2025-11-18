@@ -60,8 +60,15 @@ export default function Home() {
         {activeNegocios.length > 0 && (
           <div className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold">Negocios Disponibles</h2>
-              <Badge>{activeNegocios.length} activos</Badge>
+              <div className="flex items-center gap-4">
+                <h2 className="text-3xl font-bold">Negocios Disponibles</h2>
+                <Badge>{activeNegocios.length} activos</Badge>
+              </div>
+              <Link href="/explorar">
+                <Button variant="outline">
+                  Ver Negocios Cercanos
+                </Button>
+              </Link>
             </div>
 
             {isLoading ? (

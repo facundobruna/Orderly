@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"users-api/internal/domain"
 	"users-api/internal/middleware"
+	"users-api/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +20,7 @@ type NegociosService interface {
 	UpdateNegocio(ctx context.Context, negocioID uint64, userID uint64, req domain.UpdateNegocioRequest) (domain.Negocio, error)
 	DeleteNegocio(ctx context.Context, negocioID uint64, userID uint64) error
 	ExistsNegocio(ctx context.Context, id uint64) (bool, error)
+	SearchAddresses(query string) ([]services.AddressSuggestion, error)
 }
 
 type NegociosController struct {
@@ -264,5 +266,37 @@ func (c *NegociosController) Exists(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"exists": true,
+	})
+}
+
+// SearchAddresses maneja GET /negocios/search-addresses?q=query
+func (c *NegociosController) SearchAddresses(ctx *gin.Context) {
+	query := ctx.Query("q")
+	if query == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "El parámetro 'q' es requerido",
+		})
+		return
+	}
+
+	if len(query) < 3 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "La consulta debe tener al menos 3 caracteres",
+		})
+		return
+	}
+
+	suggestions, err := c.service.SearchAddresses(query)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Error al buscar direcciones",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"suggestions": suggestions,
+		"total":       len(suggestions),
 	})
 }

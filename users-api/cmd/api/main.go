@@ -40,7 +40,7 @@ func main() {
 	usersService := services.NewUsersService(usersRepo)
 
 	// 💼 Inicializar service de negocios
-	negociosService := services.NewNegociosService(negociosRepo, usersRepo)
+	negociosService := services.NewNegociosService(negociosRepo, usersRepo, cfg.Mapbox)
 	mesasService := services.NewMesaService(mesasRepo, negociosRepo)
 
 	// 🎮 Inicializar controllers
@@ -78,10 +78,11 @@ func main() {
 	// 🏢 Rutas de negocios
 	negocios := router.Group("/negocios")
 	{
-		// Rutas públicas
-		negocios.GET("", negociosController.ListAll)           // GET /negocios - listar todos
-		negocios.GET("/:id", negociosController.GetByID)       // GET /negocios/:id - ver detalle
-		negocios.GET("/:id/exists", negociosController.Exists) // GET /negocios/:id/exists - validar existencia
+		// Rutas públicas (IMPORTANTE: rutas específicas ANTES de rutas con parámetros)
+		negocios.GET("", negociosController.ListAll)                          // GET /negocios - listar todos
+		negocios.GET("/search-addresses", negociosController.SearchAddresses) // GET /negocios/search-addresses?q=query - autocomplete de direcciones
+		negocios.GET("/:id/exists", negociosController.Exists)                // GET /negocios/:id/exists - validar existencia
+		negocios.GET("/:id", negociosController.GetByID)                      // GET /negocios/:id - ver detalle
 
 		// Rutas protegidas (requieren autenticación)
 		negociosProtected := negocios.Group("")

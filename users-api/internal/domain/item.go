@@ -33,15 +33,17 @@ type Usuario struct {
 }
 
 type Negocio struct {
-	ID          uint64    `json:"id_negocio"`
-	Nombre      string    `json:"nombre"`
-	Descripcion string    `json:"descripcion"`
-	Direccion   string    `json:"direccion"`
-	Telefono    string    `json:"telefono"`
-	Sucursal    string    `json:"sucursal"`
-	IDUsuario   uint64    `json:"id_usuario"`
-	Activo      bool      `json:"activo"`
-	CreadoEn    time.Time `json:"creado_en"`
+	ID          uint64     `json:"id_negocio"`
+	Nombre      string     `json:"nombre"`
+	Descripcion string     `json:"descripcion"`
+	Direccion   string     `json:"direccion"`
+	Telefono    string     `json:"telefono"`
+	Sucursal    string     `json:"sucursal"`
+	IDUsuario   uint64     `json:"id_usuario"`
+	Activo      bool       `json:"activo"`
+	Latitud     *float64   `json:"latitud,omitempty"`
+	Longitud    *float64   `json:"longitud,omitempty"`
+	CreadoEn    time.Time  `json:"creado_en"`
 }
 
 type CreateNegocioRequest struct {

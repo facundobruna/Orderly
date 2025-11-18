@@ -46,4 +46,17 @@ export const negociosApi = {
       return false;
     }
   },
+
+  // Buscar direcciones para autocomplete
+  async searchAddresses(query: string): Promise<AddressSuggestion[]> {
+    const response = await usersClient.get(`/negocios/search-addresses?q=${encodeURIComponent(query)}`);
+    return response.data.suggestions || [];
+  },
 };
+
+export interface AddressSuggestion {
+  display_name: string;
+  latitud: number;
+  longitud: number;
+  place_id: number;
+}

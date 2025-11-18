@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AddressAutocomplete } from "@/components/shared/AddressAutocomplete";
 import { negociosApi } from "@/lib/api";
 import { CreateNegocioRequest } from "@/types";
 import { ArrowLeft } from "lucide-react";
@@ -108,19 +109,13 @@ export default function NuevoNegocioPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="direccion">
-                  Dirección <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="direccion"
-                  name="direccion"
-                  value={formData.direccion}
-                  onChange={handleChange}
-                  placeholder="Calle Principal 123"
-                  required
-                />
-              </div>
+              <AddressAutocomplete
+                value={formData.direccion}
+                onChange={(address) => setFormData({ ...formData, direccion: address })}
+                label="Dirección"
+                placeholder="Ej: Av. Colón 1234, Córdoba"
+                required
+              />
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">

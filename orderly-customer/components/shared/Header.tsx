@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, User, Search, Receipt } from "lucide-react";
+import { ShoppingCart, User, Search, Receipt, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/lib/store/cartStore";
@@ -44,6 +44,12 @@ export function Header({
               <Search className="h-5 w-5" />
             </Button>
           )}
+
+          <Link href="/explorar">
+            <Button variant="ghost" size="icon" title="Explorar Negocios">
+              <Compass className="h-5 w-5" />
+            </Button>
+          </Link>
 
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative">

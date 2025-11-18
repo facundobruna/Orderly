@@ -3,6 +3,9 @@ package services
 import (
 	"context"
 	"errors"
+
+	"log"
+	"users-api/internal/config"
 	"users-api/internal/dao"
 	"users-api/internal/domain"
 )
@@ -21,15 +24,17 @@ type userRepository interface {
 }
 
 type NegociosService struct {
-	repo           negocioRepository
-	userRepository userRepository
+	repo             negocioRepository
+	userRepository   userRepository
+	geocodingService *GeocodingService
 }
 
 // NewNegociosService crea una nueva instancia de NegociosService
-func NewNegociosService(repo negocioRepository, userRepo userRepository) *NegociosService {
+func NewNegociosService(repo negocioRepository, userRepo userRepository, cfg config.MapboxConfig) *NegociosService {
 	return &NegociosService{
-		repo:           repo,
-		userRepository: userRepo,
+		repo:             repo,
+		userRepository:   userRepo,
+		geocodingService: NewGeocodingService(cfg),
 	}
 }
 
@@ -83,6 +88,17 @@ func (s *NegociosService) CreateNegocio(ctx context.Context, userID uint64, req 
 		Telefono:    req.Telefono,
 		Sucursal:    sucursal,
 		IDUsuario:   userID,
+	}
+
+	// Intentar geocodificar la dirección
+	coords, err := s.geocodingService.Geocode(req.Direccion)
+	if err != nil {
+		log.Printf("[NegociosService] Warning: No se pudo geocodificar la dirección '%s': %v", req.Direccion, err)
+		// Continuar sin coordenadas - no es un error crítico
+	} else {
+		negocioDAO.Latitud = &coords.Latitud
+		negocioDAO.Longitud = &coords.Longitud
+		log.Printf("[NegociosService] Dirección geocodificada: %s -> (%.6f, %.6f)", req.Direccion, coords.Latitud, coords.Longitud)
 	}
 
 	createdNegocio, err := s.repo.Createnegocio(ctx, negocioDAO)
@@ -144,6 +160,16 @@ func (s *NegociosService) UpdateNegocio(ctx context.Context, negocioID uint64, u
 	}
 	if req.Direccion != nil {
 		updates["direccion"] = *req.Direccion
+
+		// Si cambia la dirección, re-geocodificar
+		coords, err := s.geocodingService.Geocode(*req.Direccion)
+		if err != nil {
+			log.Printf("[NegociosService] Warning: No se pudo re-geocodificar la dirección '%s': %v", *req.Direccion, err)
+		} else {
+			updates["latitud"] = coords.Latitud
+			updates["longitud"] = coords.Longitud
+			log.Printf("[NegociosService] Dirección re-geocodificada: %s -> (%.6f, %.6f)", *req.Direccion, coords.Latitud, coords.Longitud)
+		}
 	}
 	if req.Telefono != nil {
 		updates["telefono"] = *req.Telefono
@@ -191,4 +217,9 @@ func (s *NegociosService) ExistsNegocio(ctx context.Context, id uint64) (bool, e
 		return false, err
 	}
 	return true, nil
+}
+
+// SearchAddresses busca direcciones para autocomplete
+func (s *NegociosService) SearchAddresses(query string) ([]AddressSuggestion, error) {
+	return s.geocodingService.SearchAddresses(query)
 }

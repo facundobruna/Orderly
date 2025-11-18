@@ -42,6 +42,8 @@ type Negocio struct {
 	IDUsuario   uint64    `gorm:"not null;column:id_usuario"`
 	Usuario     Usuario   `gorm:"foreignKey:IDUsuario"`
 	Activo      bool      `gorm:"not null;default:true"`
+	Latitud     *float64  `gorm:"type:decimal(10,8);column:latitud"`
+	Longitud    *float64  `gorm:"type:decimal(11,8);column:longitud"`
 	CreadoEn    time.Time `gorm:"not null;autoCreateTime;column:creado_en"`
 }
 
@@ -56,6 +58,8 @@ func (n Negocio) ToDomain() domain.Negocio {
 		Sucursal:    n.Sucursal,
 		IDUsuario:   n.IDUsuario,
 		Activo:      n.Activo,
+		Latitud:     n.Latitud,
+		Longitud:    n.Longitud,
 		CreadoEn:    n.CreadoEn,
 	}
 }

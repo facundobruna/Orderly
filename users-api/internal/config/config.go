@@ -14,6 +14,7 @@ type Config struct {
 	RabbitMQ  RabbitMQConfig
 	Solr      SolrConfig
 	MySQL     MySQLConfig
+	Mapbox    MapboxConfig
 }
 
 type MySQLConfig struct {
@@ -42,6 +43,11 @@ type SolrConfig struct {
 	Host string
 	Port string
 	Core string
+}
+
+type MapboxConfig struct {
+	ApiKey  string
+	BaseURL string
 }
 
 func Load() Config {
@@ -89,6 +95,10 @@ func Load() Config {
 			Host: getEnv("SOLR_HOST", "localhost"),
 			Port: getEnv("SOLR_PORT", "8983"),
 			Core: getEnv("SOLR_CORE", "demo"),
+		},
+		Mapbox: MapboxConfig{
+			ApiKey:  getEnv("MAPBOX_API_KEY", ""),
+			BaseURL: getEnv("MAPBOX_BASE_URL", "https://api.mapbox.com/geocoding/v5/mapbox.places"),
 		},
 	}
 }
