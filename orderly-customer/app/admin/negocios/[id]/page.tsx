@@ -12,10 +12,12 @@ import { negociosApi } from "@/lib/api";
 import { UpdateNegocioRequest, Negocio } from "@/types";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 export default function EditarNegocioPage() {
   const router = useRouter();
   const params = useParams();
+  const { success, error: showError } = useToast();
   const negocioId = Number(params.id);
 
   const [negocio, setNegocio] = useState<Negocio | null>(null);
@@ -51,6 +53,7 @@ export default function EditarNegocioPage() {
     } catch (err) {
       console.error("Error loading negocio:", err);
       setError("Error al cargar el negocio");
+      showError("No se pudo cargar el negocio", "Error de carga");
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +76,7 @@ export default function EditarNegocioPage() {
     try {
       setIsSaving(true);
       await negociosApi.update(negocioId, formData);
+      success(`Negocio "${formData.nombre}" actualizado exitosamente`, "Cambios guardados");
       router.push("/admin/negocios");
     } catch (err: any) {
       console.error("Error updating negocio:", err);

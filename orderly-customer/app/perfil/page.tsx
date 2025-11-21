@@ -11,10 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/lib/store/authStore";
 import { authApi } from "@/lib/api";
 import { User, Shield, LogOut, Mail, UserCircle } from "lucide-react";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 export default function PerfilPage() {
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
+  const { success: showSuccess, error: showError, info } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -56,9 +58,11 @@ export default function PerfilPage() {
       // TODO: Implementar endpoint de actualización de perfil en el backend
       // await authApi.updateProfile(formData);
       setSuccess("Perfil actualizado correctamente");
+      showSuccess("Perfil actualizado correctamente", "Cambios guardados");
       setIsEditing(false);
     } catch (err: any) {
       setError(err.response?.data?.error || "Error al actualizar el perfil");
+      showError("Error al actualizar el perfil", "Error");
     } finally {
       setIsSaving(false);
     }
@@ -67,6 +71,7 @@ export default function PerfilPage() {
   const handleLogout = () => {
     if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
       clearAuth();
+      info("Has cerrado sesión correctamente", "Sesión cerrada");
       router.push("/");
     }
   };

@@ -110,26 +110,38 @@ export function ProductDetail({
                 Selecciona un tamaño
               </Label>
               <div className="space-y-2">
-                {producto.variantes.map((variante, index) => (
-                  <div
-                    key={index}
-                    className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-                      varianteSeleccionada?.nombre === variante.nombre
-                        ? "border-primary bg-primary/10"
-                        : "hover:border-primary/50"
-                    }`}
-                    onClick={() => setVarianteSeleccionada(variante)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{variante.nombre}</span>
-                      <span className="text-sm">
-                        {variante.precio_adicional > 0
-                          ? `+${formatCurrency(variante.precio_adicional)}`
-                          : "Incluido"}
-                      </span>
+                {producto.variantes.map((variante, index) => {
+                  const isSelected = varianteSeleccionada?.nombre === variante.nombre;
+                  return (
+                    <div
+                      key={index}
+                      className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                        isSelected
+                          ? "border-primary bg-primary/10"
+                          : "hover:border-primary/50"
+                      }`}
+                      onClick={() => setVarianteSeleccionada(variante)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="variante"
+                            checked={isSelected}
+                            onChange={() => {}}
+                            className="rounded-full"
+                          />
+                          <span className="font-medium">{variante.nombre}</span>
+                        </div>
+                        <span className="text-sm">
+                          {variante.precio_adicional > 0
+                            ? `+${formatCurrency(variante.precio_adicional)}`
+                            : "Incluido"}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/lib/store/authStore";
 import { authApi } from "@/lib/api";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 const loginSchema = z.object({
   username: z.string().min(3, "El usuario debe tener al menos 3 caracteres"),
@@ -23,6 +24,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
+  const { success } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,6 +43,7 @@ export default function LoginPage() {
     try {
       const response = await authApi.login(data);
       setAuth(response.user, response.token);
+      success(`Bienvenido de vuelta, ${response.user.nombre}!`, "Inicio de sesión exitoso");
 
       // Redirect based on user role
       if (response.user.rol === "dueno") {

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { authApi, productsApi } from "@/lib/api";
 import { useCartStore } from "@/lib/store/cartStore";
 import { Producto, Variante, Modificador } from "@/types";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 export default function NegocioPage() {
   const params = useParams();
@@ -26,6 +27,7 @@ export default function NegocioPage() {
   const [showFilters, setShowFilters] = useState(false);
 
   const { addItem, mesa } = useCartStore();
+  const { success } = useToast();
 
   // Fetch negocio info
   const { data: negocio } = useQuery({
@@ -107,6 +109,10 @@ export default function NegocioPage() {
     });
     addItem(producto, cantidad, variante, modificadores, observaciones);
     console.log("[NegocioPage] Producto agregado al carrito exitosamente");
+    success(
+      `${cantidad}x ${producto.nombre} agregado al carrito`,
+      "Producto agregado"
+    );
   };
 
   return (

@@ -13,9 +13,11 @@ import { negociosApi } from "@/lib/api";
 import { CreateNegocioRequest } from "@/types";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 export default function NuevoNegocioPage() {
   const router = useRouter();
+  const { success } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState<CreateNegocioRequest>({
@@ -40,7 +42,7 @@ export default function NuevoNegocioPage() {
     setError("");
 
     // Validar campos requeridos
-    if (!formData.nombre || !formData.direccion || !formData.telefono || !formData.sucursal) {
+    if (!formData.nombre || !formData.descripcion || !formData.direccion || !formData.telefono || !formData.sucursal) {
       setError("Por favor completa todos los campos requeridos");
       return;
     }
@@ -48,6 +50,7 @@ export default function NuevoNegocioPage() {
     try {
       setIsLoading(true);
       await negociosApi.create(formData);
+      success(`Negocio "${formData.nombre}" creado exitosamente`, "Negocio creado");
       router.push("/admin/negocios");
     } catch (err: any) {
       console.error("Error creating negocio:", err);
@@ -98,7 +101,9 @@ export default function NuevoNegocioPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="descripcion">Descripción</Label>
+                <Label htmlFor="descripcion">
+                  Descripción <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="descripcion"
                   name="descripcion"
@@ -106,6 +111,7 @@ export default function NuevoNegocioPage() {
                   onChange={handleChange}
                   placeholder="Describe tu negocio..."
                   rows={3}
+                  required
                 />
               </div>
 

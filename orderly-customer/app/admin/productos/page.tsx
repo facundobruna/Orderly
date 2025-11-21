@@ -9,8 +9,10 @@ import { Producto, Negocio } from "@/types";
 import { Plus, Package, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 export default function ProductosPage() {
+  const { success, error: showError } = useToast();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [selectedNegocio, setSelectedNegocio] = useState<number | null>(null);
@@ -39,6 +41,7 @@ export default function ProductosPage() {
       }
     } catch (error) {
       console.error("[ProductosPage] Error loading negocios:", error);
+      showError("Error al cargar los negocios", "Error de carga");
     }
   };
 
@@ -58,6 +61,7 @@ export default function ProductosPage() {
       setProductos(productosArray);
     } catch (error) {
       console.error("[ProductosPage] Error loading productos:", error);
+      showError("Error al cargar los productos", "Error de carga");
     } finally {
       setIsLoading(false);
     }
@@ -71,12 +75,14 @@ export default function ProductosPage() {
     try {
       setDeletingId(id);
       console.log("[ProductosPage] Eliminando producto:", id);
+      const productoNombre = productos.find(p => p.id === id)?.nombre;
       await productsApi.deleteProduct(id);
       console.log("[ProductosPage] Producto eliminado exitosamente");
       setProductos(productos.filter((p) => p.id !== id));
+      success(`Producto "${productoNombre}" eliminado exitosamente`, "Producto eliminado");
     } catch (error) {
       console.error("[ProductosPage] Error deleting producto:", error);
-      alert("Error al eliminar el producto");
+      showError("Error al eliminar el producto", "Error");
     } finally {
       setDeletingId(null);
     }

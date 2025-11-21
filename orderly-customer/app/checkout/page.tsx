@@ -14,9 +14,11 @@ import { useAuthStore } from "@/lib/store/authStore";
 import { ordersApi } from "@/lib/api";
 import { PaymentMethod, CreateOrdenRequest } from "@/types";
 import { formatCurrency } from "@/lib/utils";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { info, success } = useToast();
   const {
     items,
     negocio_id,
@@ -109,7 +111,7 @@ export default function CheckoutPage() {
         console.log("[CheckoutPage] Método de pago: Mercado Pago");
         // TODO: Integrar con payments-api para obtener preference_id
         // y renderizar el checkout de MP
-        alert("Integración con Mercado Pago en proceso...");
+        info("Integración con Mercado Pago en proceso...", "Pago pendiente");
       }
 
       // Limpiar carrito

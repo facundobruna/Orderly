@@ -8,8 +8,10 @@ import { negociosApi } from "@/lib/api";
 import { Negocio } from "@/types";
 import { Plus, Store, MapPin, Phone, Edit, Trash2, BarChart3 } from "lucide-react";
 import Link from "next/link";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 export default function NegociosPage() {
+  const { success, error: showError } = useToast();
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -45,12 +47,14 @@ export default function NegociosPage() {
     try {
       setDeletingId(id);
       console.log("[NegociosPage] Eliminando negocio:", id);
+      const negocioNombre = negocios.find(n => n.id_negocio === id)?.nombre;
       await negociosApi.delete(id);
       console.log("[NegociosPage] Negocio eliminado exitosamente");
       setNegocios(negocios.filter((n) => n.id_negocio !== id));
-    } catch (error) {
-      console.error("[NegociosPage] Error deleting negocio:", error);
-      alert("Error al eliminar el negocio");
+      success(`Negocio "${negocioNombre}" eliminado exitosamente`, "Negocio eliminado");
+    } catch (err) {
+      console.error("[NegociosPage] Error deleting negocio:", err);
+      showError("Error al eliminar el negocio", "Error");
     } finally {
       setDeletingId(null);
     }

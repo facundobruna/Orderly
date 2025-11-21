@@ -12,10 +12,12 @@ import { productsApi, negociosApi } from "@/lib/api";
 import { Producto, UpdateProductoRequest, Variante, Modificador, Negocio } from "@/types";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import Link from "next/link";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 export default function EditarProductoPage() {
   const router = useRouter();
   const params = useParams();
+  const { success, error: showError } = useToast();
   const productoId = params.id as string;
 
   const [producto, setProducto] = useState<Producto | null>(null);
@@ -69,6 +71,7 @@ export default function EditarProductoPage() {
     } catch (err) {
       console.error("Error loading producto:", err);
       setError("Error al cargar el producto");
+      showError("No se pudo cargar el producto", "Error de carga");
     } finally {
       setIsLoading(false);
     }
@@ -145,6 +148,7 @@ export default function EditarProductoPage() {
     try {
       setIsSaving(true);
       await productsApi.updateProduct(productoId, formData);
+      success(`Producto "${formData.nombre}" actualizado exitosamente`, "Cambios guardados");
       router.push("/admin/productos");
     } catch (err: any) {
       console.error("Error updating producto:", err);
@@ -310,8 +314,8 @@ export default function EditarProductoPage() {
                   type="number"
                   step="0.01"
                   placeholder="Precio"
-                  value={newVariante.precio_adicional}
-                  onChange={(e) => setNewVariante({ ...newVariante, precio_adicional: parseFloat(e.target.value) })}
+                  value={newVariante.precio_adicional || ""}
+                  onChange={(e) => setNewVariante({ ...newVariante, precio_adicional: parseFloat(e.target.value) || 0 })}
                   className="w-32"
                 />
                 <Button type="button" onClick={addVariante}>
@@ -349,8 +353,8 @@ export default function EditarProductoPage() {
                   type="number"
                   step="0.01"
                   placeholder="Precio"
-                  value={newModificador.precio_adicional}
-                  onChange={(e) => setNewModificador({ ...newModificador, precio_adicional: parseFloat(e.target.value) })}
+                  value={newModificador.precio_adicional || ""}
+                  onChange={(e) => setNewModificador({ ...newModificador, precio_adicional: parseFloat(e.target.value) || 0 })}
                   className="w-32"
                 />
                 <Button type="button" onClick={addModificador}>

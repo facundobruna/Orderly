@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/lib/store/authStore";
 import { authApi } from "@/lib/api";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 const registerSchema = z.object({
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -30,6 +31,7 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
+  const { success } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -52,6 +54,7 @@ export default function RegisterPage() {
         rol: "cliente",
       });
       setAuth(response.user, response.token);
+      success(`Bienvenido ${response.user.nombre}! Tu cuenta ha sido creada exitosamente.`, "Registro exitoso");
       router.push("/");
     } catch (err: any) {
       setError(

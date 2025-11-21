@@ -9,8 +9,10 @@ import { mesasApi, negociosApi } from "@/lib/api";
 import { Mesa, Negocio, CreateMesaRequest } from "@/types";
 import { Plus, Table2, Trash2, QrCode, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 export default function MesasPage() {
+  const { success, error: showError } = useToast();
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [selectedNegocio, setSelectedNegocio] = useState<number | null>(null);
@@ -37,6 +39,7 @@ export default function MesasPage() {
       }
     } catch (error) {
       console.error("Error loading negocios:", error);
+      showError("Error al cargar los negocios", "Error de carga");
     }
   };
 
@@ -46,10 +49,11 @@ export default function MesasPage() {
     try {
       setIsLoading(true);
       const data = await mesasApi.getByNegocio(selectedNegocio);
-      const mesasArray = Array.isArray(data) ? data : [];
+      const mesasArray = Array.isArray(data) ? data.filter(m => m && m.numero !== undefined) : [];
       setMesas(mesasArray);
     } catch (error) {
       console.error("Error loading mesas:", error);
+      showError("Error al cargar las mesas", "Error de carga");
     } finally {
       setIsLoading(false);
     }
@@ -67,12 +71,22 @@ export default function MesasPage() {
         ...newMesa,
         sucursal_id: negocio.sucursal,
       });
-      setMesas([...mesas, created]);
+
+      // Validar que la respuesta tenga los campos necesarios
+      if (created && created.numero !== undefined) {
+        setMesas([...mesas, created]);
+      } else {
+        // Si la API no devuelve el objeto completo, recargar las mesas
+        await loadMesas();
+      }
+
+      const mesaNumero = newMesa.numero;
       setNewMesa({ numero: "", sucursal_id: "" });
       setShowCreateForm(false);
+      success(`Mesa "${mesaNumero}" creada exitosamente`, "Mesa creada");
     } catch (error) {
       console.error("Error creating mesa:", error);
-      alert("Error al crear la mesa");
+      showError("Error al crear la mesa", "Error");
     }
   };
 
@@ -80,11 +94,13 @@ export default function MesasPage() {
     if (!selectedNegocio || !confirm("¿Eliminar esta mesa?")) return;
 
     try {
+      const mesaNumero = mesas.find(m => m.id_mesa === mesaId)?.numero;
       await mesasApi.delete(selectedNegocio, mesaId);
       setMesas(mesas.filter(m => m.id_mesa !== mesaId));
+      success(`Mesa "${mesaNumero}" eliminada exitosamente`, "Mesa eliminada");
     } catch (error) {
       console.error("Error deleting mesa:", error);
-      alert("Error al eliminar la mesa");
+      showError("Error al eliminar la mesa", "Error");
     }
   };
 

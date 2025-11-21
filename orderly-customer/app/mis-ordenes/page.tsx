@@ -14,6 +14,7 @@ import { ordersApi } from "@/lib/api";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { OrderStatus, Orden } from "@/types";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 const statusConfig: Record<
   OrderStatus,
@@ -122,6 +123,7 @@ function OrderCard({ orden }: { orden: Orden }) {
 export default function MisOrdenesPage() {
   const router = useRouter();
   const { user, isAuthenticated, setAuth } = useAuthStore();
+  const { success, error: showError } = useToast();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -141,15 +143,15 @@ export default function MisOrdenesPage() {
       const refreshedUser = await authApi.getMe();
       console.log("Usuario refrescado:", refreshedUser);
       console.log("id_usuario:", refreshedUser.id_usuario);
-      alert(`Usuario refrescado. ID: ${refreshedUser.id_usuario || "NO ID"}\nNombre: ${refreshedUser.nombre}\nJSON completo: ${JSON.stringify(refreshedUser, null, 2)}`);
       const token = useAuthStore.getState().token;
       if (token) {
         setAuth(refreshedUser, token);
+        success(`Sesión actualizada correctamente. Bienvenido ${refreshedUser.nombre}!`, "Sesión actualizada");
         window.location.reload();
       }
-    } catch (error) {
-      console.error("Error al refrescar usuario:", error);
-      alert(`Error al refrescar: ${error instanceof Error ? error.message : String(error)}`);
+    } catch (err) {
+      console.error("Error al refrescar usuario:", err);
+      showError(`Error al actualizar la sesión: ${err instanceof Error ? err.message : String(err)}`, "Error");
     }
   };
 

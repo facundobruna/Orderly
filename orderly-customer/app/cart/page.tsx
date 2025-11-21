@@ -8,9 +8,11 @@ import { CartItem } from "@/components/cart/CartItem";
 import { CartSummary } from "@/components/cart/CartSummary";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/store/cartStore";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 export default function CartPage() {
   const router = useRouter();
+  const { info } = useToast();
   const {
     items,
     updateQuantity,
@@ -20,6 +22,14 @@ export default function CartPage() {
     getTotal,
     negocio_id,
   } = useCartStore();
+
+  const handleRemoveItem = (itemId: string) => {
+    const item = items.find(i => i.id === itemId);
+    removeItem(itemId);
+    if (item) {
+      info(`${item.producto.nombre} eliminado del carrito`, "Producto eliminado");
+    }
+  };
 
   const handleCheckout = () => {
     router.push("/checkout");
@@ -62,7 +72,7 @@ export default function CartPage() {
                 key={item.id}
                 item={item}
                 onUpdateQuantity={updateQuantity}
-                onRemove={removeItem}
+                onRemove={handleRemoveItem}
               />
             ))}
           </div>

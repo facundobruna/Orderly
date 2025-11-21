@@ -8,6 +8,7 @@ import { ordersApi, negociosApi } from "@/lib/api";
 import { Orden, Negocio } from "@/types";
 import { Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { useToast } from "@/lib/contexts/ToastContext";
 
 const ESTADO_COLORS = {
   pendiente: "bg-yellow-100 text-yellow-800",
@@ -28,6 +29,7 @@ const ESTADO_LABELS = {
 };
 
 export default function OrdenesPage() {
+  const { success, error: showError } = useToast();
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [selectedNegocio, setSelectedNegocio] = useState<number | null>(null);
@@ -57,6 +59,7 @@ export default function OrdenesPage() {
       }
     } catch (error) {
       console.error("[OrdenesPage] Error loading negocios:", error);
+      showError("Error al cargar los negocios", "Error de carga");
     }
   };
 
@@ -87,6 +90,7 @@ export default function OrdenesPage() {
       setOrdenes(orders);
     } catch (error) {
       console.error("[OrdenesPage] Error loading ordenes:", error);
+      showError("Error al cargar las órdenes", "Error de carga");
     } finally {
       setIsLoading(false);
     }
@@ -99,9 +103,10 @@ export default function OrdenesPage() {
       await ordersApi.updateOrderStatus(ordenId, { nuevo_estado: nuevoEstado });
       console.log("[OrdenesPage] Estado actualizado exitosamente");
       setOrdenes(ordenes.map(o => o.id === ordenId ? { ...o, estado: nuevoEstado } : o));
+      success(`Estado actualizado a "${ESTADO_LABELS[nuevoEstado as keyof typeof ESTADO_LABELS]}"`, "Estado actualizado");
     } catch (error) {
       console.error("[OrdenesPage] Error updating order status:", error);
-      alert("Error al actualizar el estado");
+      showError("Error al actualizar el estado de la orden", "Error");
     } finally {
       setUpdatingId(null);
     }
