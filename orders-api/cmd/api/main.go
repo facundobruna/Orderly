@@ -60,6 +60,20 @@ func main() {
 	)
 	groupOrderService := services.NewGroupOrderService(groupOrderRepo, ordersRepo)
 
+	// Solr Client y Consumer
+	solrClient := clients.NewSolrClient(cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core)
+	if err := solrClient.Ping(); err != nil {
+		log.Printf("Advertencia: Solr no está disponible: %v", err)
+	} else {
+		log.Println("Conexión exitosa a Solr")
+		// Configurar Solr en el service para búsquedas
+		ordersService.SetSolrClient(solrClient)
+	}
+
+	// Iniciar consumer de Solr en goroutine
+	solrConsumer := clients.NewSolrConsumer(rabbitClient, solrClient, ordersRepo)
+	go solrConsumer.Start(ctx)
+
 	// Controller
 	ordersController := controllers.NewOrdersController(ordersService)
 	groupOrderController := controllers.NewGroupOrderController(groupOrderService)
@@ -79,6 +93,7 @@ func main() {
 	{
 		orders.POST("", ordersController.Create)
 		orders.GET("", ordersController.List)
+		orders.GET("/search", ordersController.Search)
 		orders.GET("/:id", ordersController.GetByID)
 		orders.PUT("/:id/status", ordersController.UpdateStatus)
 		orders.DELETE("/:id", ordersController.Cancel)

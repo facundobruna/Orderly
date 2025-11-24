@@ -1,0 +1,14 @@
+{
+  "add-field": [
+    {"name": "negocio_id", "type": "string", "stored": true, "indexed": true},
+    {"name": "sucursal_id", "type": "text_general", "stored": true, "indexed": true},
+    {"name": "usuario_id", "type": "string", "stored": true, "indexed": true},
+    {"name": "mesa", "type": "text_general", "stored": true, "indexed": true},
+    {"name": "estado", "type": "text_general", "stored": true, "indexed": true},
+    {"name": "total", "type": "pdouble", "stored": true, "indexed": true},
+    {"name": "observaciones", "type": "text_general", "stored": true, "indexed": true},
+    {"name": "producto_names", "type": "text_general", "stored": true, "indexed": true, "multiValued": true},
+    {"name": "created_at", "type": "pdate", "stored": true, "indexed": true},
+    {"name": "updated_at", "type": "pdate", "stored": true, "indexed": true}
+  ]
+}

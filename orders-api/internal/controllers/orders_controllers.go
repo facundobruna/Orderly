@@ -17,6 +17,7 @@ type OrdersService interface {
 	List(ctx context.Context, filters domain.OrderFilters) (domain.PaginatedOrdenResponse, error)
 	UpdateStatus(ctx context.Context, id string, nuevoEstado string) (domain.Orden, error)
 	CancelOrder(ctx context.Context, id string) error
+	SearchOrders(ctx context.Context, query string, filters map[string]string) ([]domain.Orden, error)
 }
 
 // OrdersController maneja peticiones HTTP de órdenes
@@ -172,6 +173,46 @@ func (c *OrdersController) Cancel(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Orden cancelada exitosamente",
+	})
+}
+
+// Search maneja GET /orders/search
+func (c *OrdersController) Search(ctx *gin.Context) {
+	query := ctx.Query("q")
+	if query == "" {
+		query = "*:*"
+	}
+
+	// Construir filtros desde query params
+	filters := make(map[string]string)
+	if negocioID := ctx.Query("negocio_id"); negocioID != "" {
+		filters["negocio_id"] = negocioID
+	}
+	if sucursalID := ctx.Query("sucursal_id"); sucursalID != "" {
+		filters["sucursal_id"] = sucursalID
+	}
+	if estado := ctx.Query("estado"); estado != "" {
+		filters["estado"] = estado
+	}
+	if usuarioID := ctx.Query("usuario_id"); usuarioID != "" {
+		filters["usuario_id"] = usuarioID
+	}
+	if mesa := ctx.Query("mesa"); mesa != "" {
+		filters["mesa"] = mesa
+	}
+
+	ordenes, err := c.service.SearchOrders(ctx.Request.Context(), query, filters)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Error al buscar órdenes",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"results": ordenes,
+		"total":   len(ordenes),
 	})
 }
 

@@ -23,6 +23,20 @@ interface PaginatedOrdersResponse {
   results: Orden[];
 }
 
+interface SearchOrdersParams {
+  q?: string;
+  negocio_id?: string;
+  sucursal_id?: string;
+  usuario_id?: string;
+  estado?: string;
+  mesa?: string;
+}
+
+interface SearchOrdersResponse {
+  results: Orden[];
+  total: number;
+}
+
 export const ordersApi = {
   // Orders CRUD
   async getOrders(params?: GetOrdersParams): Promise<Orden[]> {
@@ -57,6 +71,12 @@ export const ordersApi = {
 
   async cancelOrder(id: string): Promise<void> {
     await ordersClient.delete(`/orders/${id}`);
+  },
+
+  // Search orders using Solr
+  async searchOrders(params: SearchOrdersParams): Promise<Orden[]> {
+    const response = await ordersClient.get<SearchOrdersResponse>("/orders/search", { params });
+    return response.data.results || [];
   },
 
   // Group orders (for split payments) - These endpoints need to be created in backend

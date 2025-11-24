@@ -103,13 +103,7 @@ func (r *MongoProductosRepository) Create(ctx context.Context, producto domain.P
 	} else {
 		return domain.Producto{}, errors.New("failed to convert inserted ID to ObjectID")
 	}
-	created := productoDAO.ToDomain()
-	if r.solr != nil {
-		if err := r.solr.Index(created); err != nil {
-			log.Printf("Error indexing producto: %v", err)
-		}
-	}
-	return created, nil
+	return productoDAO.ToDomain(), nil
 }
 
 // GetByID busca un producto por su ID
@@ -330,13 +324,7 @@ func (r *MongoProductosRepository) Update(ctx context.Context, id string, req do
 			log.Printf("⚠️  Error invalidando caché para producto %s: %v", id, err)
 		}
 	}
-	updated := productoDAO.ToDomain()
-	if r.solr != nil {
-		if err := r.solr.Update(updated); err != nil {
-			log.Printf("Error actualizando producto en Solr: %v", err)
-		}
-	}
-	return updated, nil
+	return productoDAO.ToDomain(), nil
 }
 
 // Delete elimina un producto por ID
@@ -359,11 +347,6 @@ func (r *MongoProductosRepository) Delete(ctx context.Context, id string) error 
 		cacheKey := clients.BuildKey("producto", id)
 		if err := r.cache.Delete(cacheKey); err != nil {
 			log.Printf("Error eliminando producto de la cache")
-		}
-	}
-	if r.solr != nil {
-		if err := r.solr.Delete(id); err != nil {
-			log.Printf("Error eliminando producto de Solr: %v", err)
 		}
 	}
 	return nil

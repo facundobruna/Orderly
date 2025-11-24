@@ -14,18 +14,6 @@ import (
 	"time"
 )
 
-//Archivo: internal/repository/orders_mongo.go
-//
-//Qué debe hacer:
-//- Conectarse a MongoDB usando el driver oficial go.mongodb.org/mongo-driver
-//- Implementar métodos:
-//- Create(orden *domain.Orden) error
-//- GetByID(id string) (*domain.Orden, error)
-//- List(filters) ([]domain.Orden, error) - filtrar por negocio, sucursal, estado, usuario
-//- Update(id string, orden *domain.Orden) error
-//- UpdateStatus(id string, nuevoEstado string) error
-//- Delete(id string) error (si es necesario)
-
 type MongoOrdersRepository struct {
 	col *mongo.Collection
 }

@@ -59,8 +59,9 @@ func main() {
 		usersAPIClient,
 	)
 
-	// Iniciar consumidor en goroutine
-	//go productosService.InitConsumer(ctx)  DESCOMENTAR
+	// Iniciar consumer de Solr en goroutine
+	solrConsumer := clients.NewSolrConsumer(productosQueue, solrClient, productosRepo)
+	go solrConsumer.Start(ctx)
 
 	// Controller de productos
 	productosController := controllers.NewProductosController(productosService)

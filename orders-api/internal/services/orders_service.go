@@ -56,11 +56,17 @@ type EventPublisher interface {
 	Publish(ctx context.Context, action string, orderID string) error
 }
 
+// SolrSearcher busca órdenes en Solr
+type SolrSearcher interface {
+	Search(query string, filters map[string]string) ([]domain.Orden, error)
+}
+
 type OrdersService struct {
 	repository     OrdersRepository
 	usersClient    UsersAPIClient
 	productsClient ProductsAPIClient
 	eventPublisher EventPublisher
+	solrClient     SolrSearcher
 }
 
 func NewOrdersService(
@@ -75,6 +81,20 @@ func NewOrdersService(
 		productsClient: productsClient,
 		eventPublisher: eventPublisher,
 	}
+}
+
+// SetSolrClient configura el cliente Solr para búsquedas
+func (s *OrdersService) SetSolrClient(solrClient SolrSearcher) {
+	s.solrClient = solrClient
+}
+
+// SearchOrders busca órdenes usando Solr
+func (s *OrdersService) SearchOrders(ctx context.Context, query string, filters map[string]string) ([]domain.Orden, error) {
+	if s.solrClient == nil {
+		return nil, errors.New("Solr no está disponible para búsquedas")
+	}
+
+	return s.solrClient.Search(query, filters)
 }
 
 func (s *OrdersService) CreateOrder(ctx context.Context, req domain.CreateOrdenRequest) (domain.Orden, error) {
