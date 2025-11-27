@@ -173,10 +173,10 @@ export default function OrdenPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-green-900 mb-2">
-                    ¡Tu pedido está en camino!
+                    ¡Pedido confirmado!
                   </h3>
                   <p className="text-green-800 mb-3">
-                    Tu pedido ha sido recibido y enviado a la cocina. Puedes hacer seguimiento del estado en tiempo real desde esta página.
+                    Tu pedido ha sido recibido y enviado al restaurante. Una vez que sea aceptado, podrás hacer seguimiento del estado en tiempo real desde esta página.
                   </p>
                   <div className="flex items-center gap-2 text-sm text-green-700">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>

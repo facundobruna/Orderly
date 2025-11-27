@@ -55,15 +55,6 @@ type SolrProductoResponse struct {
 	Tags        []string  `json:"tags"`
 }
 
-// Index indexa un producto en Solr
-//
-// # EJEMPLO IMPLEMENTADO - Esta función está completa para que veas el patrón
-//
-// Pasos:
-//  1. Convertir domain.Producto a SolrProducto
-//  2. Crear el payload JSON con formato Solr
-//  3. Enviar POST a /update?commit=true
-//  4. Verificar respuesta
 func (s *SolrClient) Index(producto domain.Producto) error {
 	// PASO 1: Convertir a formato Solr
 	solrDoc := SolrProducto{

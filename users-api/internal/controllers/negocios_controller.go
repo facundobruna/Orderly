@@ -288,9 +288,13 @@ func (c *NegociosController) SearchAddresses(ctx *gin.Context) {
 
 	suggestions, err := c.service.SearchAddresses(query)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Error al buscar direcciones",
-			"details": err.Error(),
+		// Si falla la búsqueda (ej: API de Mapbox no configurada),
+		// devolvemos un array vacío en lugar de error 500
+		// Esto permite que el autocomplete funcione sin romper la UI
+		ctx.JSON(http.StatusOK, gin.H{
+			"suggestions": []services.AddressSuggestion{},
+			"total":       0,
+			"warning":     "Servicio de geocodificación no disponible",
 		})
 		return
 	}

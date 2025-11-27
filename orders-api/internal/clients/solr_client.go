@@ -12,8 +12,8 @@ import (
 
 // SolrClient es el cliente para interactuar con Apache Solr
 type SolrClient struct {
-	baseURL string
-	core    string
+	baseURL string // URL base de Solr (ej: http://localhost:8983/solr/demo)
+	core    string // Nombre del core (ej: demo)
 	client  *http.Client
 }
 
@@ -32,44 +32,38 @@ func NewSolrClient(host, port, core string) *SolrClient {
 
 // SolrOrden representa una orden en el formato que Solr espera
 type SolrOrden struct {
-	ID             string   `json:"id"`
-	NegocioID      string   `json:"negocio_id"`
-	SucursalID     string   `json:"sucursal_id"`
-	UsuarioID      string   `json:"usuario_id"`
-	Mesa           string   `json:"mesa"`
-	Estado         string   `json:"estado"`
-	Total          float64  `json:"total"`
-	Observaciones  string   `json:"observaciones"`
-	ProductoIDs    []string `json:"producto_ids"`
-	ProductoNames  []string `json:"producto_names"`
-	CreatedAt      string   `json:"created_at"`
-	UpdatedAt      string   `json:"updated_at"`
+	ID            string   `json:"id"`
+	NegocioID     string   `json:"negocio_id"`
+	SucursalID    string   `json:"sucursal_id"`
+	UsuarioID     string   `json:"usuario_id"`
+	Mesa          string   `json:"mesa"`
+	Estado        string   `json:"estado"`
+	Total         float64  `json:"total"`
+	Observaciones string   `json:"observaciones"`
+	CreatedAt     string   `json:"created_at"` // ISO 8601 format
+	ItemsText     []string `json:"items_text"` // Nombres de productos para búsqueda
 }
 
 // SolrOrdenResponse representa una orden como Solr la devuelve (con arrays)
 type SolrOrdenResponse struct {
-	ID            string        `json:"id"`
-	NegocioID     []interface{} `json:"negocio_id"`
-	SucursalID    []interface{} `json:"sucursal_id"`
-	UsuarioID     []interface{} `json:"usuario_id"`
-	Mesa          []interface{} `json:"mesa"`
-	Estado        []interface{} `json:"estado"`
-	Total         []float64     `json:"total"`
-	Observaciones []interface{} `json:"observaciones"`
-	ProductoIDs   []interface{} `json:"producto_ids"`
-	ProductoNames []interface{} `json:"producto_names"`
-	CreatedAt     []interface{} `json:"created_at"`
-	UpdatedAt     []interface{} `json:"updated_at"`
+	ID            string    `json:"id"`
+	NegocioID     []string  `json:"negocio_id"`
+	SucursalID    []string  `json:"sucursal_id"`
+	UsuarioID     []string  `json:"usuario_id"`
+	Mesa          []string  `json:"mesa"`
+	Estado        []string  `json:"estado"`
+	Total         []float64 `json:"total"`
+	Observaciones []string  `json:"observaciones"`
+	CreatedAt     []string  `json:"created_at"`
+	ItemsText     []string  `json:"items_text"`
 }
 
 // Index indexa una orden en Solr
 func (s *SolrClient) Index(orden domain.Orden) error {
-	// Extraer IDs y nombres de productos
-	productoIDs := make([]string, len(orden.Items))
-	productoNames := make([]string, len(orden.Items))
-	for i, item := range orden.Items {
-		productoIDs[i] = item.ProductoID
-		productoNames[i] = item.NombreProducto
+	// Construir lista de nombres de productos para búsqueda
+	itemsText := make([]string, 0, len(orden.Items))
+	for _, item := range orden.Items {
+		itemsText = append(itemsText, item.NombreProducto)
 	}
 
 	// Convertir a formato Solr
@@ -82,13 +76,11 @@ func (s *SolrClient) Index(orden domain.Orden) error {
 		Estado:        orden.Estado,
 		Total:         orden.Total,
 		Observaciones: orden.Observaciones,
-		ProductoIDs:   productoIDs,
-		ProductoNames: productoNames,
 		CreatedAt:     orden.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:     orden.UpdatedAt.Format(time.RFC3339),
+		ItemsText:     itemsText,
 	}
 
-	// Crear payload
+	// Crear payload en formato que Solr espera
 	payload := map[string]interface{}{
 		"add": map[string]interface{}{
 			"doc": solrDoc,
@@ -122,7 +114,12 @@ func (s *SolrClient) Index(orden domain.Orden) error {
 	return nil
 }
 
-// Delete elimina una orden de Solr por ID
+// Update actualiza una orden en Solr (en Solr, update = add/sobrescribe por ID)
+func (s *SolrClient) Update(orden domain.Orden) error {
+	return s.Index(orden)
+}
+
+// Delete elimina un documento de Solr por ID
 func (s *SolrClient) Delete(id string) error {
 	payload := map[string]interface{}{
 		"delete": map[string]interface{}{
@@ -157,7 +154,7 @@ func (s *SolrClient) Delete(id string) error {
 }
 
 // Search busca órdenes en Solr
-func (s *SolrClient) Search(query string, filters map[string]string) ([]domain.Orden, error) {
+func (s *SolrClient) Search(query string, filters map[string]string) ([]string, error) {
 	url := fmt.Sprintf("%s/select", s.baseURL)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -165,18 +162,15 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]domain.O
 		return nil, fmt.Errorf("error creando request: %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-
 	q := req.URL.Query()
 
-	// Buscar en campos de texto
-	if query == "" || query == "*:*" {
-		query = "*:*"
-	} else if !containsColon(query) {
-		// Convertir a minúsculas y buscar sin wildcard inicial
-		searchTerm := strings.ToLower(query)
-		query = fmt.Sprintf("mesa:*%s* OR estado:*%s* OR observaciones:*%s* OR producto_names:*%s* OR sucursal_id:*%s*",
-			searchTerm, searchTerm, searchTerm, searchTerm, searchTerm)
+	// Si la query no tiene campo específico y no es *:*, buscar en campos de texto
+	if query != "*:*" && !containsColon(query) {
+		// Agregar wildcards para búsqueda parcial
+		wildcardQuery := "*" + query + "*"
+		// Buscar en ID (primeros caracteres), mesa, observaciones, nombres de productos, estado
+		query = fmt.Sprintf("(id:%s OR mesa:%s OR observaciones:%s OR items_text:%s OR estado:%s)",
+			wildcardQuery, wildcardQuery, wildcardQuery, wildcardQuery, wildcardQuery)
 	}
 
 	q.Add("q", query)
@@ -184,7 +178,7 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]domain.O
 	q.Add("rows", "100")
 	q.Add("start", "0")
 
-	// Agregar filtros
+	// Agregar filtros (fq = filter query)
 	for key, value := range filters {
 		q.Add("fq", fmt.Sprintf("%s:%s", key, value))
 	}
@@ -213,27 +207,33 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]domain.O
 		return nil, fmt.Errorf("error parseando respuesta: %w", err)
 	}
 
-	// Convertir a domain.Orden (solo campos básicos, sin items completos)
-	ordenes := make([]domain.Orden, len(solrResp.Response.Docs))
+	// Extraer solo los IDs de las órdenes encontradas
+	ids := make([]string, len(solrResp.Response.Docs))
 	for i, doc := range solrResp.Response.Docs {
-		createdAt, _ := time.Parse(time.RFC3339, getFirstString(doc.CreatedAt))
-		updatedAt, _ := time.Parse(time.RFC3339, getFirstString(doc.UpdatedAt))
-
-		ordenes[i] = domain.Orden{
-			ID:            doc.ID,
-			NegocioID:     getFirstString(doc.NegocioID),
-			SucursalID:    getFirstString(doc.SucursalID),
-			UsuarioID:     getFirstString(doc.UsuarioID),
-			Mesa:          getFirstString(doc.Mesa),
-			Estado:        getFirstString(doc.Estado),
-			Total:         getFirstFloat(doc.Total),
-			Observaciones: getFirstString(doc.Observaciones),
-			CreatedAt:     createdAt,
-			UpdatedAt:     updatedAt,
-		}
+		ids[i] = doc.ID
 	}
 
-	return ordenes, nil
+	return ids, nil
+}
+
+// Helper functions
+
+func getFirstString(arr []string) string {
+	if len(arr) > 0 {
+		return arr[0]
+	}
+	return ""
+}
+
+func getFirstFloat(arr []float64) float64 {
+	if len(arr) > 0 {
+		return arr[0]
+	}
+	return 0
+}
+
+func containsColon(s string) bool {
+	return strings.Contains(s, ":")
 }
 
 // Ping verifica que Solr esté disponible
@@ -250,35 +250,4 @@ func (s *SolrClient) Ping() error {
 	}
 
 	return nil
-}
-
-// Helper functions
-func getFirstString(arr []interface{}) string {
-	if len(arr) > 0 {
-		switch v := arr[0].(type) {
-		case string:
-			return v
-		case float64:
-			return fmt.Sprintf("%.0f", v)
-		default:
-			return fmt.Sprintf("%v", v)
-		}
-	}
-	return ""
-}
-
-func getFirstFloat(arr []float64) float64 {
-	if len(arr) > 0 {
-		return arr[0]
-	}
-	return 0
-}
-
-func containsColon(s string) bool {
-	for _, c := range s {
-		if c == ':' {
-			return true
-		}
-	}
-	return false
 }

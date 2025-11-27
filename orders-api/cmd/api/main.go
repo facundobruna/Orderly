@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"orders-api/internal/clients"
 	"orders-api/internal/config"
+	"orders-api/internal/consumers"
 	"orders-api/internal/controllers"
 	"orders-api/internal/middleware"
 	"orders-api/internal/repository"
@@ -28,12 +29,17 @@ func main() {
 	}
 	db := mongoClient.Database(cfg.Mongo.DB)
 
+	// Solr Client (antes del repository porque lo necesita)
+	solrClient := clients.NewSolrClient(cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core)
+	log.Printf("Solr client configured: %s:%s/%s", cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core)
+
 	// Repository
 	ordersRepo := repository.NewMongoOrdersRepository(
 		ctx,
 		cfg.Mongo.URI,
 		cfg.Mongo.DB,
 		cfg.Mongo.Collection,
+		solrClient,
 	)
 	groupOrderRepo := repository.NewGroupOrderRepository(db)
 
@@ -60,23 +66,21 @@ func main() {
 	)
 	groupOrderService := services.NewGroupOrderService(groupOrderRepo, ordersRepo)
 
-	// Solr Client y Consumer
-	solrClient := clients.NewSolrClient(cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core)
-	if err := solrClient.Ping(); err != nil {
-		log.Printf("Advertencia: Solr no está disponible: %v", err)
-	} else {
-		log.Println("Conexión exitosa a Solr")
-		// Configurar Solr en el service para búsquedas
-		ordersService.SetSolrClient(solrClient)
-	}
-
-	// Iniciar consumer de Solr en goroutine
-	solrConsumer := clients.NewSolrConsumer(rabbitClient, solrClient, ordersRepo)
-	go solrConsumer.Start(ctx)
-
 	// Controller
 	ordersController := controllers.NewOrdersController(ordersService)
 	groupOrderController := controllers.NewGroupOrderController(groupOrderService)
+
+	// Solr Indexer Consumer
+	solrIndexer := consumers.NewSolrIndexerConsumer(ordersRepo, solrClient)
+
+	// Iniciar consumer de RabbitMQ en una goroutine
+	go func() {
+		log.Println("🚀 Iniciando consumer de Solr Indexer...")
+		ctx := context.Background()
+		if err := rabbitClient.Consume(ctx, solrIndexer.HandleEvent); err != nil {
+			log.Printf("❌ Error en consumer de Solr: %v", err)
+		}
+	}()
 
 	// Router
 	router := gin.Default()
@@ -94,6 +98,7 @@ func main() {
 		orders.POST("", ordersController.Create)
 		orders.GET("", ordersController.List)
 		orders.GET("/search", ordersController.Search)
+		orders.POST("/reindex", ordersController.Reindex)
 		orders.GET("/:id", ordersController.GetByID)
 		orders.PUT("/:id/status", ordersController.UpdateStatus)
 		orders.DELETE("/:id", ordersController.Cancel)

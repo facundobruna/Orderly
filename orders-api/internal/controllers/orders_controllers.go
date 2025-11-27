@@ -17,7 +17,8 @@ type OrdersService interface {
 	List(ctx context.Context, filters domain.OrderFilters) (domain.PaginatedOrdenResponse, error)
 	UpdateStatus(ctx context.Context, id string, nuevoEstado string) (domain.Orden, error)
 	CancelOrder(ctx context.Context, id string) error
-	SearchOrders(ctx context.Context, query string, filters map[string]string) ([]domain.Orden, error)
+	Search(ctx context.Context, query string, filters map[string]string) ([]domain.Orden, error)
+	ReindexAll(ctx context.Context) (int, error)
 }
 
 // OrdersController maneja peticiones HTTP de órdenes
@@ -176,46 +177,6 @@ func (c *OrdersController) Cancel(ctx *gin.Context) {
 	})
 }
 
-// Search maneja GET /orders/search
-func (c *OrdersController) Search(ctx *gin.Context) {
-	query := ctx.Query("q")
-	if query == "" {
-		query = "*:*"
-	}
-
-	// Construir filtros desde query params
-	filters := make(map[string]string)
-	if negocioID := ctx.Query("negocio_id"); negocioID != "" {
-		filters["negocio_id"] = negocioID
-	}
-	if sucursalID := ctx.Query("sucursal_id"); sucursalID != "" {
-		filters["sucursal_id"] = sucursalID
-	}
-	if estado := ctx.Query("estado"); estado != "" {
-		filters["estado"] = estado
-	}
-	if usuarioID := ctx.Query("usuario_id"); usuarioID != "" {
-		filters["usuario_id"] = usuarioID
-	}
-	if mesa := ctx.Query("mesa"); mesa != "" {
-		filters["mesa"] = mesa
-	}
-
-	ordenes, err := c.service.SearchOrders(ctx.Request.Context(), query, filters)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Error al buscar órdenes",
-			"details": err.Error(),
-		})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"results": ordenes,
-		"total":   len(ordenes),
-	})
-}
-
 // isValidationError verifica si es un error de validación
 func isValidationError(err error) bool {
 	errMsg := err.Error()
@@ -231,4 +192,58 @@ func isNotFoundError(err error) bool {
 	errMsg := err.Error()
 	return strings.Contains(errMsg, "no encontrad") ||
 		strings.Contains(errMsg, "no existe")
+}
+
+// Search maneja GET /orders/search
+func (c *OrdersController) Search(ctx *gin.Context) {
+	query := ctx.Query("q")
+	if query == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "El parámetro 'q' es requerido",
+		})
+		return
+	}
+
+	// Construir filtros opcionales
+	filters := make(map[string]string)
+	if negocioID := ctx.Query("negocio_id"); negocioID != "" {
+		filters["negocio_id"] = negocioID
+	}
+	if sucursalID := ctx.Query("sucursal_id"); sucursalID != "" {
+		filters["sucursal_id"] = sucursalID
+	}
+	if estado := ctx.Query("estado"); estado != "" {
+		filters["estado"] = estado
+	}
+
+	ordenes, err := c.service.Search(ctx.Request.Context(), query, filters)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Error al buscar órdenes",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"results": ordenes,
+		"total":   len(ordenes),
+	})
+}
+
+// Reindex maneja POST /orders/reindex (re-indexa todas las órdenes en Solr)
+func (c *OrdersController) Reindex(ctx *gin.Context) {
+	count, err := c.service.ReindexAll(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Error al re-indexar órdenes",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Órdenes re-indexadas exitosamente",
+		"count":   count,
+	})
 }

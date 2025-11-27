@@ -28,16 +28,17 @@ func main() {
 	)
 
 	// Repository de productos (MongoDB)
-	solrClient := clients.NewSolrClient(cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core)
-
 	productosRepo := repository.NewMongoProductosRepository(
 		ctx,
 		cfg.Mongo.URI,
 		cfg.Mongo.DB,
 		"productos",
 		cacheClient,
-		solrClient,
+		nil, // Sin Solr en el repository
 	)
+
+	// Solr Client para indexación desde el service
+	solrClient := clients.NewSolrClient(cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core)
 
 	// RabbitMQ para eventos - actúa como productor Y consumidor
 	productosQueue := clients.NewRabbitMQClient(
@@ -55,13 +56,13 @@ func main() {
 	productosService := services.NewProductosService(
 		productosRepo,
 		productosQueue, // como publisher
-		//productosQueue, // como consumer
+		productosQueue, // como consumer
 		usersAPIClient,
+		solrClient, // para indexación
 	)
 
-	// Iniciar consumer de Solr en goroutine
-	solrConsumer := clients.NewSolrConsumer(productosQueue, solrClient, productosRepo)
-	go solrConsumer.Start(ctx)
+	// Iniciar consumidor en goroutine
+	go productosService.InitConsumer(ctx)
 
 	// Controller de productos
 	productosController := controllers.NewProductosController(productosService)

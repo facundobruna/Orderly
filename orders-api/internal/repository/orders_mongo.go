@@ -14,11 +14,32 @@ import (
 	"time"
 )
 
+//Archivo: internal/repository/orders_mongo.go
+//
+//Qué debe hacer:
+//- Conectarse a MongoDB usando el driver oficial go.mongodb.org/mongo-driver
+//- Implementar métodos:
+//- Create(orden *domain.Orden) error
+//- GetByID(id string) (*domain.Orden, error)
+//- List(filters) ([]domain.Orden, error) - filtrar por negocio, sucursal, estado, usuario
+//- Update(id string, orden *domain.Orden) error
+//- UpdateStatus(id string, nuevoEstado string) error
+//- Delete(id string) error (si es necesario)
+
 type MongoOrdersRepository struct {
-	col *mongo.Collection
+	col        *mongo.Collection
+	solrClient SolrSearchClient
 }
 
-func NewMongoOrdersRepository(ctx context.Context, uri, dbName, collectionName string) *MongoOrdersRepository {
+// SolrSearchClient define la interfaz para búsqueda en Solr
+type SolrSearchClient interface {
+	Search(query string, filters map[string]string) ([]string, error)
+	Index(orden domain.Orden) error
+	Update(orden domain.Orden) error
+	Delete(id string) error
+}
+
+func NewMongoOrdersRepository(ctx context.Context, uri, dbName, collectionName string, solrClient SolrSearchClient) *MongoOrdersRepository {
 	opt := options.Client().ApplyURI(uri)
 	opt.SetServerSelectionTimeout(10 * time.Second)
 
@@ -38,7 +59,8 @@ func NewMongoOrdersRepository(ctx context.Context, uri, dbName, collectionName s
 	log.Println("Conexión exitosa a MongoDB (Orders)")
 
 	return &MongoOrdersRepository{
-		col: client.Database(dbName).Collection(collectionName),
+		col:        client.Database(dbName).Collection(collectionName),
+		solrClient: solrClient,
 	}
 }
 
@@ -83,6 +105,10 @@ func (r *MongoOrdersRepository) Create(ctx context.Context, orden domain.Orden) 
 	}
 
 	created := ordersDAO.ToDomain()
+
+	// La indexación en Solr se hace a través de eventos de RabbitMQ
+	// El consumer escucha los eventos y actualiza Solr automáticamente
+
 	return created, nil
 
 }
@@ -234,7 +260,12 @@ func (r *MongoOrdersRepository) UpdateStatus(ctx context.Context, id string, nue
 		return domain.Orden{}, err
 	}
 
-	return updatedDAO.ToDomain(), nil
+	updated := updatedDAO.ToDomain()
+
+	// La actualización en Solr se hace a través de eventos de RabbitMQ
+	// El consumer escucha los eventos y actualiza Solr automáticamente
+
+	return updated, nil
 }
 
 func (r *MongoOrdersRepository) Delete(ctx context.Context, id string) error {
@@ -260,6 +291,9 @@ func (r *MongoOrdersRepository) Delete(ctx context.Context, id string) error {
 	if result.MatchedCount == 0 {
 		return errors.New("orden no encontrada")
 	}
+
+	// La eliminación de Solr se hace a través de eventos de RabbitMQ
+	// El consumer escucha los eventos y actualiza Solr automáticamente
 
 	return nil
 }
@@ -294,4 +328,55 @@ func (r *MongoOrdersRepository) UpdateOrden(ctx context.Context, orden *domain.O
 	}
 
 	return nil
+}
+
+// Search busca órdenes usando Solr y retorna los detalles completos desde MongoDB
+func (r *MongoOrdersRepository) Search(ctx context.Context, query string, filters map[string]string) ([]domain.Orden, error) {
+	if r.solrClient == nil {
+		return nil, errors.New("solr client not configured")
+	}
+
+	// Buscar IDs en Solr
+	ids, err := r.solrClient.Search(query, filters)
+	if err != nil {
+		return nil, fmt.Errorf("error buscando en Solr: %w", err)
+	}
+
+	if len(ids) == 0 {
+		return []domain.Orden{}, nil
+	}
+
+	// Convertir IDs string a ObjectID
+	objectIDs := make([]primitive.ObjectID, 0, len(ids))
+	for _, id := range ids {
+		objectID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			log.Printf("Error convirtiendo ID %s a ObjectID: %v", id, err)
+			continue
+		}
+		objectIDs = append(objectIDs, objectID)
+	}
+
+	// Buscar en MongoDB
+	filter := bson.M{"_id": bson.M{"$in": objectIDs}}
+	cursor, err := r.col.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("error buscando en MongoDB: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var ordenes []domain.Orden
+	for cursor.Next(ctx) {
+		var ordenDAO dao.Orden
+		if err := cursor.Decode(&ordenDAO); err != nil {
+			return nil, err
+		}
+		ordenes = append(ordenes, ordenDAO.ToDomain())
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return ordenes, nil
 }

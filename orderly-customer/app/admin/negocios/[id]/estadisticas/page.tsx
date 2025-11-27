@@ -73,7 +73,10 @@ export default function EstadisticasNegocioPage() {
       const ordenesData = await ordersApi.getOrders({
         negocio_id: negocioId,
       });
-      const ordenes = Array.isArray(ordenesData) ? ordenesData : [];
+      // Filtrar solo las órdenes entregadas para las estadísticas
+      const ordenes = Array.isArray(ordenesData)
+        ? ordenesData.filter(o => o.estado === "entregado")
+        : [];
 
       // Calcular estadísticas
       const ahora = new Date();

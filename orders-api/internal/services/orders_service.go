@@ -15,6 +15,7 @@ type OrdersRepository interface {
 	List(ctx context.Context, filters domain.OrderFilters) (domain.PaginatedOrdenResponse, error)
 	UpdateStatus(ctx context.Context, id string, nuevoEstado string) (domain.Orden, error)
 	Delete(ctx context.Context, id string) error
+	Search(ctx context.Context, query string, filters map[string]string) ([]domain.Orden, error)
 }
 
 // UsersAPIClient valida negocios y sucursales
@@ -56,17 +57,11 @@ type EventPublisher interface {
 	Publish(ctx context.Context, action string, orderID string) error
 }
 
-// SolrSearcher busca órdenes en Solr
-type SolrSearcher interface {
-	Search(query string, filters map[string]string) ([]domain.Orden, error)
-}
-
 type OrdersService struct {
 	repository     OrdersRepository
 	usersClient    UsersAPIClient
 	productsClient ProductsAPIClient
 	eventPublisher EventPublisher
-	solrClient     SolrSearcher
 }
 
 func NewOrdersService(
@@ -81,20 +76,6 @@ func NewOrdersService(
 		productsClient: productsClient,
 		eventPublisher: eventPublisher,
 	}
-}
-
-// SetSolrClient configura el cliente Solr para búsquedas
-func (s *OrdersService) SetSolrClient(solrClient SolrSearcher) {
-	s.solrClient = solrClient
-}
-
-// SearchOrders busca órdenes usando Solr
-func (s *OrdersService) SearchOrders(ctx context.Context, query string, filters map[string]string) ([]domain.Orden, error) {
-	if s.solrClient == nil {
-		return nil, errors.New("Solr no está disponible para búsquedas")
-	}
-
-	return s.solrClient.Search(query, filters)
 }
 
 func (s *OrdersService) CreateOrder(ctx context.Context, req domain.CreateOrdenRequest) (domain.Orden, error) {
@@ -322,4 +303,34 @@ func (s *OrdersService) CancelOrder(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+// Search busca órdenes usando Solr
+func (s *OrdersService) Search(ctx context.Context, query string, filters map[string]string) ([]domain.Orden, error) {
+	return s.repository.Search(ctx, query, filters)
+}
+
+// ReindexAll re-indexa todas las órdenes en Solr publicando eventos para cada una
+func (s *OrdersService) ReindexAll(ctx context.Context) (int, error) {
+	// Obtener todas las órdenes
+	result, err := s.repository.List(ctx, domain.OrderFilters{
+		Page:  1,
+		Limit: 1000, // Ajustar según necesidad
+	})
+	if err != nil {
+		return 0, fmt.Errorf("error listando órdenes: %w", err)
+	}
+
+	count := 0
+	// Publicar evento para cada orden
+	for _, orden := range result.Results {
+		if err := s.eventPublisher.Publish(ctx, "order_created", orden.ID); err != nil {
+			log.Printf("Error publicando evento de re-indexación para orden %s: %v", orden.ID, err)
+			continue
+		}
+		count++
+	}
+
+	log.Printf("Publicados %d eventos de re-indexación", count)
+	return count, nil
 }

@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ordersApi, negociosApi } from "@/lib/api";
 import { Orden, Negocio } from "@/types";
-import { Clock, CheckCircle, XCircle, RefreshCw, Search } from "lucide-react";
+import { Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/lib/contexts/ToastContext";
-import { Input } from "@/components/ui/input";
 
 const ESTADO_COLORS = {
   pendiente: "bg-yellow-100 text-yellow-800",
@@ -38,7 +37,6 @@ export default function OrdenesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     loadNegocios();
@@ -48,7 +46,7 @@ export default function OrdenesPage() {
     if (selectedNegocio) {
       loadOrdenes();
     }
-  }, [selectedNegocio, filter]);
+  }, [selectedNegocio, filter, searchQuery]);
 
   const loadNegocios = async () => {
     try {
@@ -74,9 +72,19 @@ export default function OrdenesPage() {
 
     try {
       setIsLoading(true);
-      console.log("[OrdenesPage] Cargando órdenes para negocio:", selectedNegocio, "filtro:", filter);
-      // API returns Orden[] directly, not paginated
-      const ordenesData = await ordersApi.getOrders({ negocio_id: String(selectedNegocio) });
+      console.log("[OrdenesPage] Cargando órdenes para negocio:", selectedNegocio, "filtro:", filter, "búsqueda:", searchQuery);
+
+      let ordenesData: Orden[];
+
+      // Si hay búsqueda, usar searchOrders
+      if (searchQuery.trim()) {
+        console.log("[OrdenesPage] Usando búsqueda con query:", searchQuery);
+        ordenesData = await ordersApi.searchOrders(searchQuery, { negocio_id: String(selectedNegocio) });
+      } else {
+        // Sin búsqueda, usar getOrders normal
+        ordenesData = await ordersApi.getOrders({ negocio_id: String(selectedNegocio) });
+      }
+
       console.log("[OrdenesPage] Órdenes recibidas:", ordenesData);
       let orders = Array.isArray(ordenesData) ? ordenesData : [];
 
@@ -125,38 +133,6 @@ export default function OrdenesPage() {
     return statusFlow[currentStatus] || null;
   };
 
-  const handleSearch = async () => {
-    if (!selectedNegocio || !searchQuery.trim()) {
-      loadOrdenes();
-      return;
-    }
-
-    try {
-      setIsSearching(true);
-      setIsLoading(true);
-      console.log("[OrdenesPage] Buscando órdenes:", searchQuery);
-
-      const results = await ordersApi.searchOrders({
-        q: searchQuery,
-        negocio_id: String(selectedNegocio),
-      });
-
-      console.log("[OrdenesPage] Resultados de búsqueda:", results.length);
-      setOrdenes(results);
-    } catch (error) {
-      console.error("[OrdenesPage] Error searching orders:", error);
-      showError("Error al buscar órdenes", "Error de búsqueda");
-    } finally {
-      setIsLoading(false);
-      setIsSearching(false);
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery("");
-    loadOrdenes();
-  };
-
   return (
     <div>
       <AdminHeader
@@ -165,68 +141,61 @@ export default function OrdenesPage() {
       />
 
       <div className="p-8">
-        <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700">Negocio:</label>
-            <select
-              value={selectedNegocio || ""}
-              onChange={(e) => setSelectedNegocio(Number(e.target.value))}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              {negocios.map((negocio) => (
-                <option key={negocio.id_negocio} value={negocio.id_negocio}>
-                  {negocio.nombre}
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium text-gray-700">Negocio:</label>
+              <select
+                value={selectedNegocio || ""}
+                onChange={(e) => setSelectedNegocio(Number(e.target.value))}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {negocios.map((negocio) => (
+                  <option key={negocio.id_negocio} value={negocio.id_negocio}>
+                    {negocio.nombre}
+                  </option>
+                ))}
+              </select>
 
-            <div className="flex gap-2 ml-4">
-              <Button
-                variant={filter === "activas" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilter("activas")}
-              >
-                Activas
-              </Button>
-              <Button
-                variant={filter === "todas" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilter("todas")}
-              >
-                Todas
-              </Button>
+              <div className="flex gap-2 ml-4">
+                <Button
+                  variant={filter === "activas" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("activas")}
+                >
+                  Activas
+                </Button>
+                <Button
+                  variant={filter === "todas" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("todas")}
+                >
+                  Todas
+                </Button>
+              </div>
             </div>
+
+            <Button onClick={loadOrdenes} variant="outline">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Actualizar
+            </Button>
           </div>
 
-          <Button onClick={loadOrdenes} variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Actualizar
-          </Button>
-        </div>
-
-        {/* Barra de búsqueda */}
-        <div className="mb-6">
-          <div className="flex gap-2">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Buscar por mesa, observaciones, productos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="pl-10"
-              />
-            </div>
-            <Button onClick={handleSearch} disabled={isSearching}>
-              {isSearching ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              ) : (
-                "Buscar"
-              )}
-            </Button>
+          {/* Barra de búsqueda */}
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Buscar por ID, mesa, estado, productos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
             {searchQuery && (
-              <Button variant="outline" onClick={handleClearSearch}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSearchQuery("")}
+              >
                 Limpiar
               </Button>
             )}

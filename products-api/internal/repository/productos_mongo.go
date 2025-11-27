@@ -103,7 +103,8 @@ func (r *MongoProductosRepository) Create(ctx context.Context, producto domain.P
 	} else {
 		return domain.Producto{}, errors.New("failed to convert inserted ID to ObjectID")
 	}
-	return productoDAO.ToDomain(), nil
+	created := productoDAO.ToDomain()
+	return created, nil
 }
 
 // GetByID busca un producto por su ID
@@ -324,7 +325,8 @@ func (r *MongoProductosRepository) Update(ctx context.Context, id string, req do
 			log.Printf("⚠️  Error invalidando caché para producto %s: %v", id, err)
 		}
 	}
-	return productoDAO.ToDomain(), nil
+	updated := productoDAO.ToDomain()
+	return updated, nil
 }
 
 // Delete elimina un producto por ID

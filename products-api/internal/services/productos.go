@@ -27,21 +27,29 @@ type ProductosPublisher interface {
 }
 
 // ProductosConsumer consume eventos de productos
-/*type ProductosConsumer interface {
+type ProductosConsumer interface {
 	Consume(ctx context.Context, handler func(ctx context.Context, message ProductoEvent) error) error
-}*/
+}
 
 // NegocioValidator valida la existencia de negocios
 type NegocioValidator interface {
 	ValidateNegocioExists(ctx context.Context, negocioID string) (bool, error)
 }
 
+// SolrIndexer interfaz para indexar en Solr
+type SolrIndexer interface {
+	Index(producto domain.Producto) error
+	Update(producto domain.Producto) error
+	Delete(id string) error
+}
+
 // ProductosService implementa la lógica de negocio para productos
 type ProductosService struct {
-	repository ProductosRepository
-	publisher  ProductosPublisher
-	//consumer         ProductosConsumer
+	repository       ProductosRepository
+	publisher        ProductosPublisher
+	consumer         ProductosConsumer
 	negocioValidator NegocioValidator
+	solrIndexer      SolrIndexer
 }
 
 // ProductoEvent estructura del evento de producto
@@ -51,24 +59,25 @@ type ProductoEvent struct {
 }
 
 // NewProductosService crea una nueva instancia del service
-func NewProductosService(repository ProductosRepository, publisher ProductosPublisher /*consumer ProductosConsumer*/, negocioValidator NegocioValidator) *ProductosService {
+func NewProductosService(repository ProductosRepository, publisher ProductosPublisher, consumer ProductosConsumer, negocioValidator NegocioValidator, solrIndexer SolrIndexer) *ProductosService {
 	return &ProductosService{
-		repository: repository,
-		publisher:  publisher,
-		//consumer:         consumer,
+		repository:       repository,
+		publisher:        publisher,
+		consumer:         consumer,
 		negocioValidator: negocioValidator,
+		solrIndexer:      solrIndexer,
 	}
 }
 
 // InitConsumer inicia el consumidor de eventos en una goroutine
-/*func (s *ProductosService) InitConsumer(ctx context.Context) {
+func (s *ProductosService) InitConsumer(ctx context.Context) {
 	log.Println("Starting RabbitMQ consumer for products...")
 
 	if err := s.consumer.Consume(ctx, s.handleMessage); err != nil {
 		log.Printf("Error in RabbitMQ consumer: %v", err)
 	}
 	log.Println("RabbitMQ consumer stopped.")
-}*/
+}
 
 // handleMessage procesa los mensajes recibidos de RabbitMQ
 func (s *ProductosService) handleMessage(ctx context.Context, message ProductoEvent) error {
@@ -85,22 +94,47 @@ func (s *ProductosService) handleMessage(ctx context.Context, message ProductoEv
 			return fmt.Errorf("error getting product for indexing: %w", err)
 		}
 
-		// Aquí podrías agregar lógica adicional, como:
-		// - Enviar notificaciones
-		// - Actualizar estadísticas
-		// - Sincronizar con otros sistemas
+		// Indexar en Solr
+		if s.solrIndexer != nil {
+			if err := s.solrIndexer.Index(producto); err != nil {
+				log.Printf("Error indexing product in Solr: %v", err)
+				return fmt.Errorf("error indexing product in Solr: %w", err)
+			}
+			log.Printf("Product indexed in Solr: %s - %s", producto.ID, producto.Nombre)
+		}
 
 		log.Printf("Product processed: %s - %s", producto.ID, producto.Nombre)
 
 	case "update":
 		log.Printf("Product updated: %s", message.ItemID)
-		// Lógica para actualización
-		// Por ejemplo: invalidar caché, notificar cambios, etc.
+
+		// Obtener el producto actualizado
+		producto, err := s.repository.GetByID(ctx, message.ItemID)
+		if err != nil {
+			log.Printf("Error getting product for updating index: %v", err)
+			return fmt.Errorf("error getting product for updating index: %w", err)
+		}
+
+		// Actualizar en Solr
+		if s.solrIndexer != nil {
+			if err := s.solrIndexer.Update(producto); err != nil {
+				log.Printf("Error updating product in Solr: %v", err)
+				return fmt.Errorf("error updating product in Solr: %w", err)
+			}
+			log.Printf("Product updated in Solr: %s - %s", producto.ID, producto.Nombre)
+		}
 
 	case "delete":
 		log.Printf("Product deleted: %s", message.ItemID)
-		// Lógica para eliminación
-		// Por ejemplo: limpiar referencias, notificar, etc.
+
+		// Eliminar de Solr
+		if s.solrIndexer != nil {
+			if err := s.solrIndexer.Delete(message.ItemID); err != nil {
+				log.Printf("Error deleting product from Solr: %v", err)
+				return fmt.Errorf("error deleting product from Solr: %w", err)
+			}
+			log.Printf("Product deleted from Solr: %s", message.ItemID)
+		}
 
 	default:
 		log.Printf("Unknown action: %s", message.Action)

@@ -61,17 +61,20 @@ export default function AdminDashboard() {
       const ordenesData = await ordersApi.getOrders({});
       const todasLasOrdenes = Array.isArray(ordenesData) ? ordenesData : [];
 
-      // Filtrar solo las órdenes de los negocios del administrador
+      // Filtrar todas las órdenes de los negocios del administrador
       // Convertir ambos a string para comparación segura
-      const ordenes = todasLasOrdenes.filter(o => {
+      const todasOrdenesNegocio = todasLasOrdenes.filter(o => {
         return negociosIds.has(String(o.negocio_id));
       });
+
+      // Filtrar solo las órdenes entregadas para las estadísticas
+      const ordenesEntregadas = todasOrdenesNegocio.filter(o => o.estado === "entregado");
 
       // Calcular órdenes de hoy
       const ahora = new Date();
       const hoy = ahora.toISOString().split('T')[0];
 
-      const ordenesHoy = ordenes.filter(o => {
+      const ordenesHoy = ordenesEntregadas.filter(o => {
         if (!o.created_at) return false;
         const fechaStr = typeof o.created_at === 'string' ? o.created_at.split('T')[0] : '';
         return fechaStr === hoy;
@@ -81,7 +84,7 @@ export default function AdminDashboard() {
       const mesActual = ahora.getMonth();
       const anoActual = ahora.getFullYear();
 
-      const ingresosMes = ordenes
+      const ingresosMes = ordenesEntregadas
         .filter(o => {
           if (!o.created_at) return false;
           const fechaOrden = new Date(o.created_at);
@@ -94,7 +97,7 @@ export default function AdminDashboard() {
       const mesAnterior = fechaMesAnterior.getMonth();
       const anoAnterior = fechaMesAnterior.getFullYear();
 
-      const ingresosMesAnterior = ordenes
+      const ingresosMesAnterior = ordenesEntregadas
         .filter(o => {
           if (!o.created_at) return false;
           const fechaOrden = new Date(o.created_at);
@@ -113,14 +116,14 @@ export default function AdminDashboard() {
 
       setStats({
         totalNegocios: negocios.length,
-        totalOrdenes: ordenes.length,
+        totalOrdenes: ordenesEntregadas.length,
         ordenesHoy,
         ingresosMes,
         crecimiento: Number(crecimiento.toFixed(1)),
       });
 
-      // Obtener últimas 5 órdenes para actividad reciente
-      const ordenesRecientesData = ordenes
+      // Obtener últimas 5 órdenes para actividad reciente (todas, no solo entregadas)
+      const ordenesRecientesData = todasOrdenesNegocio
         .sort((a, b) => {
           const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
           const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
