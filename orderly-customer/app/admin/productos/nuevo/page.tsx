@@ -285,7 +285,7 @@ export default function NuevoProductoPage() {
                   type="number"
                   step="0.01"
                   placeholder="Precio"
-                  value={newVariante.precio_adicional || ""}
+                  value={newVariante.precio_adicional ?? ""}
                   onChange={(e) => setNewVariante({ ...newVariante, precio_adicional: parseFloat(e.target.value) || 0 })}
                   className="w-32"
                 />
@@ -324,7 +324,7 @@ export default function NuevoProductoPage() {
                   type="number"
                   step="0.01"
                   placeholder="Precio"
-                  value={newModificador.precio_adicional || ""}
+                  value={newModificador.precio_adicional ?? ""}
                   onChange={(e) => setNewModificador({ ...newModificador, precio_adicional: parseFloat(e.target.value) || 0 })}
                   className="w-32"
                 />
