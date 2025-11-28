@@ -133,7 +133,7 @@ func (r *MongoProductosRepository) GetByID(ctx context.Context, id string) (doma
 		cachekey := clients.BuildKey("producto", id)
 		err = r.cache.Set(cachekey, producto)
 		if err != nil {
-			log.Printf("⚠️  Error guardando en caché: %v", err)
+			log.Printf("Error guardando en caché: %v", err)
 		}
 		return producto, nil
 	}

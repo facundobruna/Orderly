@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"orders-api/internal/domain"
+	"sync"
 )
 
 type OrdersRepository interface {
@@ -129,90 +130,148 @@ func (s *OrdersService) validateCreateRequest(req domain.CreateOrdenRequest) err
 	return nil
 }
 
+type itemResult struct {
+	index int
+	item  domain.ItemOrden
+	err   error
+}
+
 func (s *OrdersService) processItems(ctx context.Context, items []domain.CreateItemOrdenRequest) ([]domain.ItemOrden, error) {
-	result := make([]domain.ItemOrden, 0, len(items))
+	numItems := len(items)
+
+	resultChan := make(chan itemResult, numItems)
+
+	var wg sync.WaitGroup
+
+	log.Printf("Iniciando procesamiento CONCURRENTE de %d items usando goroutines...", numItems)
 
 	for i, item := range items {
-		log.Printf("Obteniendo info del producto %s...", item.ProductoID)
-		producto, err := s.productsClient.GetProducto(ctx, item.ProductoID)
-		if err != nil {
-			return nil, fmt.Errorf("error obteniendo producto %s (item #%d): %w", item.ProductoID, i+1, err)
-		}
-		log.Printf(" Producto encontrado: %s - $%.2f", producto.Nombre, producto.PrecioBase)
+		wg.Add(1)
 
-		log.Printf(" Calculando precio para producto %s con variante '%s' y %d modificadores...",
-			item.ProductoID, item.VarianteNombre, len(item.Modificadores))
+		go func(index int, itemReq domain.CreateItemOrdenRequest) {
+			defer wg.Done()
 
-		precio, err := s.productsClient.GetQuote(ctx, item.ProductoID, item.VarianteNombre, item.Modificadores)
-		if err != nil {
-			return nil, fmt.Errorf("error obteniendo precio calculado del producto %s (item #%d): %w", item.ProductoID, i+1, err)
-		}
+			log.Printf("[Goroutine %d] Procesando producto %s...", index, itemReq.ProductoID)
 
-		log.Printf("Precio calculado: $%.2f", precio.PrecioTotal)
+			itemOrden, err := s.processItemConcurrent(ctx, itemReq, index)
 
-		var varianteSnapshot *domain.Variante
-		if item.VarianteNombre != "" {
-			for _, v := range producto.Variantes {
-				if v.Nombre == item.VarianteNombre {
-					varianteSnapshot = &domain.Variante{
-						Nombre:          v.Nombre,
-						PrecioAdicional: v.PrecioAdicional,
-					}
-					log.Printf(" Snapshot de variante: %s (+$%.2f)", v.Nombre, v.PrecioAdicional)
-					break
-				}
+			resultChan <- itemResult{
+				index: index,
+				item:  itemOrden,
+				err:   err,
 			}
 
-			if varianteSnapshot == nil {
-				return nil, fmt.Errorf("variante '%s' no encontrada en producto %s (item #%d)",
-					item.VarianteNombre, producto.Nombre, i+1)
+			if err != nil {
+				log.Printf("[Goroutine %d]  Error: %v", index, err)
+			} else {
+				log.Printf("[Goroutine %d]  Completado: %s", index, itemOrden.NombreProducto)
 			}
-		}
-
-		modificadoresSnapshot := make([]domain.Modificador, 0, len(item.Modificadores))
-
-		for _, modNombre := range item.Modificadores {
-			encontrado := false
-
-			for _, mod := range producto.Modificadores {
-				if mod.Nombre == modNombre {
-					modificadoresSnapshot = append(modificadoresSnapshot, domain.Modificador{
-						Nombre:          mod.Nombre,
-						PrecioAdicional: mod.PrecioAdicional,
-					})
-					log.Printf("Snapshot de modificador: %s (+$%.2f)", mod.Nombre, mod.PrecioAdicional)
-					encontrado = true
-					break
-				}
-			}
-
-			if !encontrado {
-				return nil, fmt.Errorf("modificador '%s' no encontrado en producto %s (item #%d)",
-					modNombre, producto.Nombre, i+1)
-			}
-		}
-
-		subtotalItem := precio.PrecioTotal * float64(item.Cantidad)
-
-		log.Printf(" Subtotal item: $%.2f × %d = $%.2f", precio.PrecioTotal, item.Cantidad, subtotalItem)
-
-		itemOrden := domain.ItemOrden{
-			ProductoID:                 item.ProductoID,
-			NombreProducto:             producto.Nombre,
-			PrecioBase:                 producto.PrecioBase,
-			Cantidad:                   item.Cantidad,
-			VarianteSeleccionada:       varianteSnapshot,
-			ModificadoresSeleccionados: modificadoresSnapshot,
-			Subtotal:                   subtotalItem,
-		}
-
-		result = append(result, itemOrden)
-
-		log.Printf("Item procesado: %s × %d = $%.2f", producto.Nombre, item.Cantidad, subtotalItem)
+		}(i, item)
 	}
 
-	log.Printf("Todos los items procesados correctamente (%d items)", len(result))
-	return result, nil
+	go func() {
+		wg.Wait()
+		close(resultChan)
+		log.Printf("Todas las goroutines completadas")
+	}()
+
+	results := make([]itemResult, 0, numItems)
+	for result := range resultChan {
+		results = append(results, result)
+	}
+
+	for _, result := range results {
+		if result.err != nil {
+			return nil, result.err
+		}
+	}
+
+	orderedResults := make([]domain.ItemOrden, numItems)
+	for _, result := range results {
+		orderedResults[result.index] = result.item
+	}
+
+	log.Printf("Procesamiento concurrente completado: %d items procesados exitosamente", numItems)
+	return orderedResults, nil
+}
+
+func (s *OrdersService) processItemConcurrent(ctx context.Context, item domain.CreateItemOrdenRequest, index int) (domain.ItemOrden, error) {
+	log.Printf("[Item %d] Obteniendo info del producto %s...", index, item.ProductoID)
+	producto, err := s.productsClient.GetProducto(ctx, item.ProductoID)
+	if err != nil {
+		return domain.ItemOrden{}, fmt.Errorf("error obteniendo producto %s (item #%d): %w", item.ProductoID, index+1, err)
+	}
+	log.Printf("[Item %d] Producto encontrado: %s - $%.2f", index, producto.Nombre, producto.PrecioBase)
+
+	log.Printf("[Item %d] Calculando precio para producto %s con variante '%s' y %d modificadores...",
+		index, item.ProductoID, item.VarianteNombre, len(item.Modificadores))
+
+	precio, err := s.productsClient.GetQuote(ctx, item.ProductoID, item.VarianteNombre, item.Modificadores)
+	if err != nil {
+		return domain.ItemOrden{}, fmt.Errorf("error obteniendo precio calculado del producto %s (item #%d): %w", item.ProductoID, index+1, err)
+	}
+
+	log.Printf("[Item %d] Precio calculado: $%.2f", index, precio.PrecioTotal)
+
+	var varianteSnapshot *domain.Variante
+	if item.VarianteNombre != "" {
+		for _, v := range producto.Variantes {
+			if v.Nombre == item.VarianteNombre {
+				varianteSnapshot = &domain.Variante{
+					Nombre:          v.Nombre,
+					PrecioAdicional: v.PrecioAdicional,
+				}
+				log.Printf("[Item %d] Snapshot de variante: %s (+$%.2f)", index, v.Nombre, v.PrecioAdicional)
+				break
+			}
+		}
+
+		if varianteSnapshot == nil {
+			return domain.ItemOrden{}, fmt.Errorf("variante '%s' no encontrada en producto %s (item #%d)",
+				item.VarianteNombre, producto.Nombre, index+1)
+		}
+	}
+
+	modificadoresSnapshot := make([]domain.Modificador, 0, len(item.Modificadores))
+
+	for _, modNombre := range item.Modificadores {
+		encontrado := false
+
+		for _, mod := range producto.Modificadores {
+			if mod.Nombre == modNombre {
+				modificadoresSnapshot = append(modificadoresSnapshot, domain.Modificador{
+					Nombre:          mod.Nombre,
+					PrecioAdicional: mod.PrecioAdicional,
+				})
+				log.Printf("[Item %d] Snapshot de modificador: %s (+$%.2f)", index, mod.Nombre, mod.PrecioAdicional)
+				encontrado = true
+				break
+			}
+		}
+
+		if !encontrado {
+			return domain.ItemOrden{}, fmt.Errorf("modificador '%s' no encontrado en producto %s (item #%d)",
+				modNombre, producto.Nombre, index+1)
+		}
+	}
+
+	subtotalItem := precio.PrecioTotal * float64(item.Cantidad)
+
+	log.Printf("[Item %d] Subtotal item: $%.2f × %d = $%.2f", index, precio.PrecioTotal, item.Cantidad, subtotalItem)
+
+	itemOrden := domain.ItemOrden{
+		ProductoID:                 item.ProductoID,
+		NombreProducto:             producto.Nombre,
+		PrecioBase:                 producto.PrecioBase,
+		Cantidad:                   item.Cantidad,
+		VarianteSeleccionada:       varianteSnapshot,
+		ModificadoresSeleccionados: modificadoresSnapshot,
+		Subtotal:                   subtotalItem,
+	}
+
+	log.Printf("[Item %d] Item procesado: %s × %d = $%.2f", index, producto.Nombre, item.Cantidad, subtotalItem)
+
+	return itemOrden, nil
 }
 
 func (s *OrdersService) calculateTotals(items []domain.ItemOrden) (subtotal, total float64) {

@@ -49,7 +49,7 @@ func GenerateToken(userID uint64, username string, rol string) (string, error) {
 func ValidateToken(tokenString string) (*Claims, error) {
 
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		// Verificar que el método de firma sea HMAC
+
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("método de firma inválido")
 		}
@@ -60,7 +60,7 @@ func ValidateToken(tokenString string) (*Claims, error) {
 		return nil, err
 	}
 
-	// Extraer claims
+
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		return claims, nil
 	}
