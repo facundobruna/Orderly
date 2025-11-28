@@ -14,7 +14,6 @@ import { ordersApi } from "@/lib/api";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { OrderStatus, Orden } from "@/types";
-import { useToast } from "@/lib/contexts/ToastContext";
 
 const statusConfig: Record<
   OrderStatus,
@@ -122,8 +121,7 @@ function OrderCard({ orden }: { orden: Orden }) {
 
 export default function MisOrdenesPage() {
   const router = useRouter();
-  const { user, isAuthenticated, setAuth } = useAuthStore();
-  const { success, error: showError } = useToast();
+  const { user, isAuthenticated } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -135,25 +133,6 @@ export default function MisOrdenesPage() {
       router.push("/login");
     }
   }, [mounted, isAuthenticated, router]);
-
-  const handleRefreshUser = async () => {
-    try {
-      const { authApi } = await import("@/lib/api");
-      console.log("Intentando refrescar usuario...");
-      const refreshedUser = await authApi.getMe();
-      console.log("Usuario refrescado:", refreshedUser);
-      console.log("id_usuario:", refreshedUser.id_usuario);
-      const token = useAuthStore.getState().token;
-      if (token) {
-        setAuth(refreshedUser, token);
-        success(`Sesión actualizada correctamente. Bienvenido ${refreshedUser.nombre}!`, "Sesión actualizada");
-        window.location.reload();
-      }
-    } catch (err) {
-      console.error("Error al refrescar usuario:", err);
-      showError(`Error al actualizar la sesión: ${err instanceof Error ? err.message : String(err)}`, "Error");
-    }
-  };
 
   const {
     data: ordenes = [],
@@ -235,30 +214,6 @@ export default function MisOrdenesPage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* DEBUG INFO - TEMPORAL */}
-          <Card className="mb-6 bg-yellow-50 border-yellow-200">
-            <CardContent className="pt-6">
-              <h3 className="font-bold mb-2">Debug Info (temporal):</h3>
-              <div className="text-sm space-y-1">
-                <p><strong>User ID:</strong> {user?.id_usuario || "NO ID"}</p>
-                <p><strong>Username:</strong> {user?.username || "NO USER"}</p>
-                <p><strong>Total órdenes:</strong> {ordenes.length}</p>
-                <p><strong>Error:</strong> {error ? String(error) : "No"}</p>
-                <p><strong>Loading:</strong> {isLoading ? "Sí" : "No"}</p>
-              </div>
-              {!user?.id_usuario && (
-                <div className="mt-4">
-                  <p className="text-sm text-red-600 mb-2">
-                    ⚠️ Tu sesión no tiene ID de usuario. Haz click aquí para actualizarla:
-                  </p>
-                  <Button onClick={handleRefreshUser} size="sm" variant="default">
-                    Refrescar Usuario
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Page Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
