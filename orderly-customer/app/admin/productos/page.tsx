@@ -10,9 +10,11 @@ import { Plus, Package, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 export default function ProductosPage() {
-  const { success, error: showError } = useToast();
+  const { success } = useToast();
+  const { handleError } = useApiError({ context: "AdminProductosPage" });
   const [productos, setProductos] = useState<Producto[]>([]);
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [selectedNegocio, setSelectedNegocio] = useState<number | null>(null);
@@ -41,7 +43,7 @@ export default function ProductosPage() {
       }
     } catch (error) {
       console.error("[ProductosPage] Error loading negocios:", error);
-      showError("Error al cargar los negocios", "Error de carga");
+      handleError(error, "Error al cargar los negocios");
     }
   };
 
@@ -61,7 +63,7 @@ export default function ProductosPage() {
       setProductos(productosArray);
     } catch (error) {
       console.error("[ProductosPage] Error loading productos:", error);
-      showError("Error al cargar los productos", "Error de carga");
+      handleError(error, "Error al cargar los productos");
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +84,7 @@ export default function ProductosPage() {
       success(`Producto "${productoNombre}" eliminado exitosamente`, "Producto eliminado");
     } catch (error) {
       console.error("[ProductosPage] Error deleting producto:", error);
-      showError("Error al eliminar el producto", "Error");
+      handleError(error, "Error al eliminar el producto");
     } finally {
       setDeletingId(null);
     }
@@ -134,7 +136,7 @@ export default function ProductosPage() {
             <select
               value={selectedNegocio || ""}
               onChange={(e) => setSelectedNegocio(Number(e.target.value))}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-burgundy-500 focus:outline-none focus:ring-1 focus:ring-burgundy-500"
             >
               {negocios.map((negocio) => (
                 <option key={negocio.id_negocio} value={negocio.id_negocio}>
@@ -158,7 +160,7 @@ export default function ProductosPage() {
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <div className="text-center">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mx-auto" />
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-burgundy-600 mx-auto" />
               <p className="mt-4 text-gray-600">Cargando productos...</p>
             </div>
           </div>
@@ -224,7 +226,7 @@ export default function ProductosPage() {
                   </div>
 
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-xl font-bold text-blue-600">
+                    <span className="text-xl font-bold text-burgundy-600">
                       {formatCurrency(producto.precio_base)}
                     </span>
                     <span className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded">

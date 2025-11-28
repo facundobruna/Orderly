@@ -54,8 +54,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		}
 
 		ctx.JSON(statusCode, gin.H{
-			"error":   "Error al registrar usuario",
-			"details": err.Error(),
+			"error": err.Error(),
 		})
 		return
 	}

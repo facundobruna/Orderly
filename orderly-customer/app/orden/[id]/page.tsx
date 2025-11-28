@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ordersApi } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { OrderStatus } from "@/types";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 const statusConfig: Record<
   OrderStatus,
@@ -62,6 +63,7 @@ export default function OrdenPage() {
   const isNewOrder = searchParams.get("success") === "true";
 
   const [showSuccessBanner, setShowSuccessBanner] = useState(isNewOrder);
+  const { handleError } = useApiError({ context: "OrdenDetailPage" });
 
   console.log("[OrdenPage] Renderizando página de orden:", ordenId);
   if (isNewOrder) {
@@ -121,7 +123,10 @@ export default function OrdenPage() {
   }
 
   if (error || !orden) {
-    console.error("[OrdenPage] Error al cargar orden:", error);
+    if (error) {
+      console.error("[OrdenPage] Error al cargar orden:", error);
+      handleError(error, "No se pudo cargar la información del pedido. Por favor, intenta nuevamente.");
+    }
     console.log("[OrdenPage] Orden no encontrada o error en la carga");
     return (
       <div className="min-h-screen bg-gray-50">

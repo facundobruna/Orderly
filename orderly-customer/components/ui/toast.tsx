@@ -29,14 +29,14 @@ const styles = {
   success: "bg-green-50 border-green-200 text-green-800",
   error: "bg-red-50 border-red-200 text-red-800",
   warning: "bg-yellow-50 border-yellow-200 text-yellow-800",
-  info: "bg-blue-50 border-blue-200 text-blue-800",
+  info: "bg-burgundy-50 border-burgundy-200 text-burgundy-800",
 };
 
 const iconStyles = {
   success: "text-green-600",
   error: "text-red-600",
   warning: "text-yellow-600",
-  info: "text-blue-600",
+  info: "text-burgundy-600",
 };
 
 export function ToastItem({ toast, onClose }: ToastItemProps) {

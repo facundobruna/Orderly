@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuthStore } from "@/lib/store/authStore";
 import { authApi } from "@/lib/api";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 const loginSchema = z.object({
   username: z.string().min(3, "El usuario debe tener al menos 3 caracteres"),
@@ -25,8 +26,11 @@ export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const { success } = useToast();
+  const { handleError } = useApiError({
+    context: "LoginPage",
+    preventRedirect: true // Prevent redirect since we're already on login
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const {
     register,
@@ -38,7 +42,6 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    setError("");
 
     try {
       const response = await authApi.login(data);
@@ -51,20 +54,18 @@ export default function LoginPage() {
       } else {
         router.push("/");
       }
-    } catch (err: any) {
-      setError(
-        err.response?.data?.error || "Error al iniciar sesión. Verifica tus credenciales."
-      );
+    } catch (err) {
+      handleError(err, "Error al iniciar sesión. Verifica tus credenciales.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-burgundy-50 to-white px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-blue-600">
+          <CardTitle className="text-3xl font-bold text-burgundy-600">
             Orderly
           </CardTitle>
           <CardDescription>
@@ -73,12 +74,6 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
-
             <div className="space-y-2">
               <Label htmlFor="username">Usuario</Label>
               <Input
@@ -118,7 +113,7 @@ export default function LoginPage() {
 
             <div className="text-center text-sm text-muted-foreground">
               ¿No tienes cuenta?{" "}
-              <Link href="/register" className="text-blue-600 hover:underline font-semibold">
+              <Link href="/register" className="text-burgundy-600 hover:underline font-semibold">
                 Regístrate aquí
               </Link>
             </div>

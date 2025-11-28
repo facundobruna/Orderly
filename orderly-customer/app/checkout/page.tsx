@@ -15,10 +15,12 @@ import { ordersApi } from "@/lib/api";
 import { PaymentMethod, CreateOrdenRequest } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { info, success } = useToast();
+  const { handleError } = useApiError({ context: "CheckoutPage" });
   const {
     items,
     negocio_id,
@@ -36,7 +38,6 @@ export default function CheckoutPage() {
   const [numPersonas, setNumPersonas] = useState(2);
   const [observaciones, setObservaciones] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [orderCreated, setOrderCreated] = useState<{ id: string; numero: string } | null>(null);
 
   // Redirect to cart if empty - use useEffect to avoid updating Router during render
@@ -71,7 +72,6 @@ export default function CheckoutPage() {
 
   const handleSubmitOrder = async () => {
     setIsLoading(true);
-    setError("");
 
     try {
       console.log("[CheckoutPage] Iniciando creación de orden...");
@@ -124,12 +124,8 @@ export default function CheckoutPage() {
         id: orden.id,
         numero: orden.id.slice(-8),
       });
-    } catch (err: any) {
-      console.error("[CheckoutPage] Error al crear orden:", err);
-      console.error("[CheckoutPage] Error response:", err.response?.data);
-      setError(
-        err.response?.data?.error || "Error al crear la orden. Intenta nuevamente."
-      );
+    } catch (err) {
+      handleError(err, "Error al crear la orden. Por favor verifica los datos e intenta nuevamente.");
     } finally {
       setIsLoading(false);
     }
@@ -190,12 +186,6 @@ export default function CheckoutPage() {
 
       <div className="container mx-auto px-4 py-6">
         <h1 className="text-3xl font-bold mb-6">Finalizar Pedido</h1>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-6">
-            {error}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Checkout Form */}

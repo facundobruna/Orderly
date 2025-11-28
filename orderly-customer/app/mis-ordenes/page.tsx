@@ -14,6 +14,7 @@ import { ordersApi } from "@/lib/api";
 import { useAuthStore } from "@/lib/store/authStore";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { OrderStatus, Orden } from "@/types";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 const statusConfig: Record<
   OrderStatus,
@@ -29,7 +30,7 @@ const statusConfig: Record<
     label: "Aceptado",
     icon: CheckCircle2,
     variant: "default",
-    color: "text-blue-600",
+    color: "text-burgundy-600",
   },
   en_preparacion: {
     label: "En Preparación",
@@ -123,6 +124,7 @@ export default function MisOrdenesPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
   const [mounted, setMounted] = useState(false);
+  const { handleError } = useApiError({ context: "MisOrdenesPage" });
 
   useEffect(() => {
     setMounted(true);
@@ -187,6 +189,7 @@ export default function MisOrdenesPage() {
   }
 
   if (error) {
+    handleError(error, "No se pudieron cargar tus pedidos. Por favor, intenta nuevamente.");
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />

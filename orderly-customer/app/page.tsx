@@ -33,7 +33,7 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-blue-600 mb-4">Orderly</h1>
+          <h1 className="text-5xl font-bold text-burgundy-600 mb-4">Orderly</h1>
           <p className="text-xl text-gray-700 mb-6">
             Sistema de Pedidos para Restaurantes
           </p>
@@ -73,7 +73,7 @@ export default function Home() {
 
             {isLoading ? (
               <div className="text-center py-12">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mx-auto" />
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-burgundy-600 mx-auto" />
                 <p className="mt-4 text-gray-600">Cargando negocios...</p>
               </div>
             ) : (
@@ -86,8 +86,8 @@ export default function Home() {
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                            <Store className="h-6 w-6 text-blue-600" />
+                          <div className="h-12 w-12 rounded-full bg-burgundy-100 flex items-center justify-center">
+                            <Store className="h-6 w-6 text-burgundy-600" />
                           </div>
                           <div>
                             <CardTitle className="text-lg">

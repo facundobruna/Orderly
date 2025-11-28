@@ -10,9 +10,11 @@ import { Mesa, Negocio, CreateMesaRequest } from "@/types";
 import { Plus, Table2, Trash2, QrCode, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 export default function MesasPage() {
-  const { success, error: showError } = useToast();
+  const { success } = useToast();
+  const { handleError } = useApiError({ context: "AdminMesasPage" });
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [selectedNegocio, setSelectedNegocio] = useState<number | null>(null);
@@ -39,7 +41,7 @@ export default function MesasPage() {
       }
     } catch (error) {
       console.error("Error loading negocios:", error);
-      showError("Error al cargar los negocios", "Error de carga");
+      handleError(error, "Error al cargar los negocios");
     }
   };
 
@@ -53,7 +55,7 @@ export default function MesasPage() {
       setMesas(mesasArray);
     } catch (error) {
       console.error("Error loading mesas:", error);
-      showError("Error al cargar las mesas", "Error de carga");
+      handleError(error, "Error al cargar las mesas");
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +88,7 @@ export default function MesasPage() {
       success(`Mesa "${mesaNumero}" creada exitosamente`, "Mesa creada");
     } catch (error) {
       console.error("Error creating mesa:", error);
-      showError("Error al crear la mesa", "Error");
+      handleError(error, "Error al crear la mesa");
     }
   };
 
@@ -100,7 +102,7 @@ export default function MesasPage() {
       success(`Mesa "${mesaNumero}" eliminada exitosamente`, "Mesa eliminada");
     } catch (error) {
       console.error("Error deleting mesa:", error);
-      showError("Error al eliminar la mesa", "Error");
+      handleError(error, "Error al eliminar la mesa");
     }
   };
 
@@ -115,7 +117,7 @@ export default function MesasPage() {
             <select
               value={selectedNegocio || ""}
               onChange={(e) => setSelectedNegocio(Number(e.target.value))}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-burgundy-500 focus:outline-none focus:ring-1 focus:ring-burgundy-500"
             >
               {negocios.map((negocio) => (
                 <option key={negocio.id_negocio} value={negocio.id_negocio}>
@@ -152,7 +154,7 @@ export default function MesasPage() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-burgundy-600" />
           </div>
         ) : mesas.length === 0 ? (
           <Card>

@@ -13,13 +13,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuthStore } from "@/lib/store/authStore";
 import { authApi } from "@/lib/api";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 const registerSchema = z.object({
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   apellido: z.string().min(2, "El apellido debe tener al menos 2 caracteres"),
   email: z.string().email("Email inválido"),
   username: z.string().min(3, "El usuario debe tener al menos 3 caracteres"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
@@ -32,8 +33,8 @@ export default function RegisterPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const { success } = useToast();
+  const { handleError } = useApiError({ context: "RegisterPage" });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const {
     register,
@@ -45,7 +46,6 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
-    setError("");
 
     try {
       const { confirmPassword, ...registerData } = data;
@@ -56,20 +56,18 @@ export default function RegisterPage() {
       setAuth(response.user, response.token);
       success(`Bienvenido ${response.user.nombre}! Tu cuenta ha sido creada exitosamente.`, "Registro exitoso");
       router.push("/");
-    } catch (err: any) {
-      setError(
-        err.response?.data?.error || "Error al registrarse. Intenta nuevamente."
-      );
+    } catch (err) {
+      handleError(err);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-burgundy-50 to-white px-4 py-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-blue-600">
+          <CardTitle className="text-3xl font-bold text-burgundy-600">
             Orderly
           </CardTitle>
           <CardDescription>
@@ -78,12 +76,6 @@ export default function RegisterPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="nombre">Nombre</Label>
@@ -181,7 +173,7 @@ export default function RegisterPage() {
 
             <div className="text-center text-sm text-muted-foreground">
               ¿Ya tienes cuenta?{" "}
-              <Link href="/login" className="text-blue-600 hover:underline font-semibold">
+              <Link href="/login" className="text-burgundy-600 hover:underline font-semibold">
                 Inicia sesión aquí
               </Link>
             </div>

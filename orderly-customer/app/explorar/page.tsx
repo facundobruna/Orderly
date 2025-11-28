@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { negociosApi } from "@/lib/api/negocios";
 import { Negocio } from "@/types/business";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 interface NegocioConDistancia extends Negocio {
   distancia?: number; // en kilómetros
@@ -49,6 +50,7 @@ export default function ExplorarPage() {
   const [ubicacionUsuario, setUbicacionUsuario] = useState<Coordenadas | null>(null);
   const [errorUbicacion, setErrorUbicacion] = useState<string | null>(null);
   const [cargandoUbicacion, setCargandoUbicacion] = useState(true);
+  const { handleError } = useApiError({ context: "ExplorarPage" });
 
   // Solicitar ubicación del usuario
   useEffect(() => {
@@ -80,7 +82,7 @@ export default function ExplorarPage() {
   }, []);
 
   // Fetch all negocios
-  const { data: negocios, isLoading: isLoadingNegocios } = useQuery({
+  const { data: negocios, isLoading: isLoadingNegocios, error: negociosError } = useQuery({
     queryKey: ["negocios-publicos"],
     queryFn: async () => {
       console.log("[ExplorarPage] Obteniendo lista de negocios públicos");
@@ -90,6 +92,7 @@ export default function ExplorarPage() {
         return result;
       } catch (err) {
         console.error("[ExplorarPage] Error al obtener negocios:", err);
+        handleError(err, "No se pudieron cargar los negocios. Por favor, intenta nuevamente.");
         throw err;
       }
     },

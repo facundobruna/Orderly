@@ -14,6 +14,7 @@ import { authApi, productsApi } from "@/lib/api";
 import { useCartStore } from "@/lib/store/cartStore";
 import { Producto, Variante, Modificador } from "@/types";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 export default function NegocioPage() {
   const params = useParams();
@@ -28,6 +29,7 @@ export default function NegocioPage() {
 
   const { addItem, mesa } = useCartStore();
   const { success } = useToast();
+  const { handleError } = useApiError({ context: "NegocioPage" });
 
   // Fetch negocio info
   const { data: negocio } = useQuery({
@@ -40,6 +42,7 @@ export default function NegocioPage() {
         return result;
       } catch (err) {
         console.error("[NegocioPage] Error al obtener negocio:", err);
+        handleError(err, "No se pudo cargar la información del negocio.");
         throw err;
       }
     },
@@ -60,6 +63,7 @@ export default function NegocioPage() {
         return result;
       } catch (err) {
         console.error("[NegocioPage] Error al obtener productos:", err);
+        handleError(err, "No se pudieron cargar los productos. Por favor, intenta nuevamente.");
         throw err;
       }
     },

@@ -15,7 +15,8 @@
       "Bash(./orders-api.exe)",
       "Bash(docker restart:*)",
       "Bash(tasklist:*)",
-      "Bash(cmd //c taskkill //PID 24784 //F)"
+      "Bash(cmd //c taskkill //PID 24784 //F)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

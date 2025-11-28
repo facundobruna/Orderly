@@ -14,12 +14,13 @@ import { CreateNegocioRequest } from "@/types";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 export default function NuevoNegocioPage() {
   const router = useRouter();
   const { success } = useToast();
+  const { handleError } = useApiError({ context: "CreateNegocioPage" });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [formData, setFormData] = useState<CreateNegocioRequest>({
     nombre: "",
     descripcion: "",
@@ -37,13 +38,21 @@ export default function NuevoNegocioPage() {
     });
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Solo permitir números, +, -, espacios y paréntesis
+    const value = e.target.value.replace(/[^\d+\-\s()]/g, '');
+    setFormData({
+      ...formData,
+      telefono: value,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     // Validar campos requeridos
     if (!formData.nombre || !formData.descripcion || !formData.direccion || !formData.telefono || !formData.sucursal) {
-      setError("Por favor completa todos los campos requeridos");
+      handleError(new Error("Validación fallida"), "Por favor completa todos los campos requeridos");
       return;
     }
 
@@ -54,7 +63,7 @@ export default function NuevoNegocioPage() {
       router.push("/admin/negocios");
     } catch (err: any) {
       console.error("Error creating negocio:", err);
-      setError(err.response?.data?.message || "Error al crear el negocio");
+      handleError(err, "Error al crear el negocio");
     } finally {
       setIsLoading(false);
     }
@@ -80,12 +89,6 @@ export default function NuevoNegocioPage() {
         <Card className="max-w-2xl">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
-                  {error}
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="nombre">
                   Nombre del Negocio <span className="text-red-500">*</span>
@@ -131,8 +134,9 @@ export default function NuevoNegocioPage() {
                   <Input
                     id="telefono"
                     name="telefono"
+                    type="tel"
                     value={formData.telefono}
-                    onChange={handleChange}
+                    onChange={handlePhoneChange}
                     placeholder="+54 11 1234-5678"
                     required
                   />

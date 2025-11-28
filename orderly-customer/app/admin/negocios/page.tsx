@@ -9,13 +9,14 @@ import { Negocio } from "@/types";
 import { Plus, Store, MapPin, Phone, Edit, Trash2, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 export default function NegociosPage() {
-  const { success, error: showError } = useToast();
+  const { success } = useToast();
+  const { handleError } = useApiError({ context: "AdminNegociosPage" });
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     loadNegocios();
@@ -24,7 +25,6 @@ export default function NegociosPage() {
   const loadNegocios = async () => {
     try {
       setIsLoading(true);
-      setError("");
       console.log("[NegociosPage] Cargando negocios...");
       const negocios = await negociosApi.getMy();
       console.log("[NegociosPage] Negocios cargados:", negocios);
@@ -32,7 +32,7 @@ export default function NegociosPage() {
     } catch (err: any) {
       console.error("[NegociosPage] Error loading negocios:", err);
       console.error("[NegociosPage] Error response:", err.response?.data);
-      setError(err.response?.data?.error || "Error al cargar los negocios");
+      handleError(err, "Error al cargar los negocios");
       setNegocios([]);
     } finally {
       setIsLoading(false);
@@ -54,7 +54,7 @@ export default function NegociosPage() {
       success(`Negocio "${negocioNombre}" eliminado exitosamente`, "Negocio eliminado");
     } catch (err) {
       console.error("[NegociosPage] Error deleting negocio:", err);
-      showError("Error al eliminar el negocio", "Error");
+      handleError(err, "Error al eliminar el negocio");
     } finally {
       setDeletingId(null);
     }
@@ -64,7 +64,7 @@ export default function NegociosPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mx-auto" />
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-burgundy-600 mx-auto" />
           <p className="mt-4 text-gray-600">Cargando negocios...</p>
         </div>
       </div>
@@ -79,12 +79,6 @@ export default function NegociosPage() {
       />
 
       <div className="p-8">
-        {error && (
-          <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-600">
-            {error}
-          </div>
-        )}
-
         <div className="flex justify-between items-center mb-6">
           <div>
             <p className="text-sm text-gray-600">
@@ -99,7 +93,7 @@ export default function NegociosPage() {
           </Link>
         </div>
 
-        {negocios.length === 0 && !error ? (
+        {negocios.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <Store className="h-16 w-16 text-gray-400 mb-4" />
@@ -124,8 +118,8 @@ export default function NegociosPage() {
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-                        <Store className="h-6 w-6 text-blue-600" />
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-burgundy-100">
+                        <Store className="h-6 w-6 text-burgundy-600" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900">

@@ -8,6 +8,7 @@ import { negociosApi, ordersApi } from "@/lib/api";
 import { Orden } from "@/types";
 import { Store, Package, ShoppingBag, DollarSign, TrendingUp, TrendingDown, Clock } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 interface DashboardStats {
   totalNegocios: number;
@@ -42,6 +43,7 @@ export default function AdminDashboard() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [ordenesRecientes, setOrdenesRecientes] = useState<Orden[]>([]);
+  const { handleError } = useApiError({ context: "AdminDashboard" });
 
   useEffect(() => {
     loadDashboardData();
@@ -133,6 +135,7 @@ export default function AdminDashboard() {
       setOrdenesRecientes(ordenesRecientesData);
     } catch (error) {
       console.error("❌ Error loading dashboard data:", error);
+      handleError(error, "No se pudieron cargar los datos del dashboard. Por favor, intenta nuevamente.");
     } finally {
       setIsLoading(false);
     }
@@ -143,8 +146,8 @@ export default function AdminDashboard() {
       title: "Mis Negocios",
       value: stats.totalNegocios,
       icon: Store,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
+      color: "text-burgundy-600",
+      bgColor: "bg-burgundy-100",
     },
     {
       title: "Órdenes Totales",
@@ -173,7 +176,7 @@ export default function AdminDashboard() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mx-auto" />
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-burgundy-600 mx-auto" />
           <p className="mt-4 text-gray-600">Cargando dashboard...</p>
         </div>
       </div>
@@ -232,11 +235,11 @@ export default function AdminDashboard() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
           <div className="grid gap-4 md:grid-cols-3">
             <Card
-              className="cursor-pointer hover:border-blue-500 transition-colors"
+              className="cursor-pointer hover:border-burgundy-500 transition-colors"
               onClick={() => router.push('/admin/negocios/nuevo')}
             >
               <CardContent className="p-6">
-                <Store className="h-8 w-8 text-blue-600 mb-3" />
+                <Store className="h-8 w-8 text-burgundy-600 mb-3" />
                 <h3 className="font-semibold text-gray-900">Crear Negocio</h3>
                 <p className="text-sm text-gray-600 mt-1">
                   Añade un nuevo restaurante o local
@@ -293,13 +296,13 @@ export default function AdminDashboard() {
                         <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
                           orden.estado === 'completado' ? 'bg-green-100' :
                           orden.estado === 'pendiente' ? 'bg-yellow-100' :
-                          orden.estado === 'en_preparacion' ? 'bg-blue-100' :
+                          orden.estado === 'en_preparacion' ? 'bg-burgundy-100' :
                           'bg-gray-100'
                         }`}>
                           <ShoppingBag className={`h-5 w-5 ${
                             orden.estado === 'completado' ? 'text-green-600' :
                             orden.estado === 'pendiente' ? 'text-yellow-600' :
-                            orden.estado === 'en_preparacion' ? 'text-blue-600' :
+                            orden.estado === 'en_preparacion' ? 'text-burgundy-600' :
                             'text-gray-600'
                           }`} />
                         </div>
@@ -315,7 +318,7 @@ export default function AdminDashboard() {
                         <p className={`text-xs ${
                           orden.estado === 'completado' ? 'text-green-600' :
                           orden.estado === 'pendiente' ? 'text-yellow-600' :
-                          orden.estado === 'en_preparacion' ? 'text-blue-600' :
+                          orden.estado === 'en_preparacion' ? 'text-burgundy-600' :
                           'text-gray-600'
                         }`}>
                           {orden.estado === 'completado' ? 'Completado' :

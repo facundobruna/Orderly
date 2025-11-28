@@ -13,18 +13,19 @@ import { Producto, UpdateProductoRequest, Variante, Modificador, Negocio } from 
 import { ArrowLeft, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 export default function EditarProductoPage() {
   const router = useRouter();
   const params = useParams();
-  const { success, error: showError } = useToast();
+  const { success } = useToast();
+  const { handleError } = useApiError({ context: "EditProductoPage" });
   const productoId = params.id as string;
 
   const [producto, setProducto] = useState<Producto | null>(null);
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState<UpdateProductoRequest>({
     nombre: "",
@@ -70,8 +71,7 @@ export default function EditarProductoPage() {
       });
     } catch (err) {
       console.error("Error loading producto:", err);
-      setError("Error al cargar el producto");
-      showError("No se pudo cargar el producto", "Error de carga");
+      handleError(err, "Error al cargar el producto");
     } finally {
       setIsLoading(false);
     }
@@ -138,10 +138,9 @@ export default function EditarProductoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     if (!formData.nombre || !formData.categoria || formData.precio_base <= 0) {
-      setError("Por favor completa todos los campos requeridos");
+      handleError(new Error("Validación fallida"), "Por favor completa todos los campos requeridos");
       return;
     }
 
@@ -152,7 +151,7 @@ export default function EditarProductoPage() {
       router.push("/admin/productos");
     } catch (err: any) {
       console.error("Error updating producto:", err);
-      setError(err.response?.data?.message || "Error al actualizar el producto");
+      handleError(err, "Error al actualizar el producto");
     } finally {
       setIsSaving(false);
     }
@@ -162,7 +161,7 @@ export default function EditarProductoPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mx-auto" />
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-burgundy-600 mx-auto" />
           <p className="mt-4 text-gray-600">Cargando producto...</p>
         </div>
       </div>
@@ -176,7 +175,7 @@ export default function EditarProductoPage() {
         <div className="p-8">
           <Card>
             <CardContent className="p-6 text-center">
-              <p className="text-red-600">{error || "Producto no encontrado"}</p>
+              <p className="text-red-600">Producto no encontrado</p>
               <Link href="/admin/productos" className="mt-4 inline-block">
                 <Button>Volver a Productos</Button>
               </Link>
@@ -202,12 +201,6 @@ export default function EditarProductoPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
-          {error && (
-            <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
-              {error}
-            </div>
-          )}
-
           <Card>
             <CardHeader>
               <CardTitle>Información Básica</CardTitle>
@@ -292,7 +285,7 @@ export default function EditarProductoPage() {
                   name="disponible"
                   checked={formData.disponible}
                   onChange={handleChange}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-gray-300 text-burgundy-600 focus:ring-burgundy-500"
                 />
                 <Label htmlFor="disponible" className="cursor-pointer">Producto disponible</Label>
               </div>
@@ -397,9 +390,9 @@ export default function EditarProductoPage() {
               {formData.tags && formData.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {formData.tags.map((tag, index) => (
-                    <div key={index} className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                    <div key={index} className="flex items-center gap-1 bg-burgundy-100 text-burgundy-800 px-3 py-1 rounded-full text-sm">
                       <span>{tag}</span>
-                      <button type="button" onClick={() => removeTag(tag)} className="hover:bg-blue-200 rounded-full p-0.5">
+                      <button type="button" onClick={() => removeTag(tag)} className="hover:bg-burgundy-200 rounded-full p-0.5">
                         <X className="h-3 w-3" />
                       </button>
                     </div>

@@ -13,13 +13,14 @@ import { CreateProductoRequest, Variante, Modificador, Negocio } from "@/types";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 export default function NuevoProductoPage() {
   const router = useRouter();
-  const { success, error: showError } = useToast();
+  const { success } = useToast();
+  const { handleError } = useApiError({ context: "CreateProductoPage" });
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState<CreateProductoRequest>({
     negocio_id: "",
@@ -55,7 +56,7 @@ export default function NuevoProductoPage() {
       }
     } catch (err) {
       console.error("Error loading negocios:", err);
-      showError("Error al cargar los negocios", "Error de carga");
+      handleError(err, "Error al cargar los negocios");
     }
   };
 
@@ -103,10 +104,9 @@ export default function NuevoProductoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     if (!formData.nombre || !formData.categoria || formData.precio_base <= 0) {
-      setError("Por favor completa todos los campos requeridos");
+      handleError(new Error("Validación fallida"), "Por favor completa todos los campos requeridos");
       return;
     }
 
@@ -117,7 +117,7 @@ export default function NuevoProductoPage() {
       router.push("/admin/productos");
     } catch (err: any) {
       console.error("Error creating producto:", err);
-      setError(err.response?.data?.message || "Error al crear el producto");
+      handleError(err, "Error al crear el producto");
     } finally {
       setIsLoading(false);
     }
@@ -156,12 +156,6 @@ export default function NuevoProductoPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
-          {error && (
-            <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
-              {error}
-            </div>
-          )}
-
           <Card>
             <CardHeader>
               <CardTitle>Información Básica</CardTitle>

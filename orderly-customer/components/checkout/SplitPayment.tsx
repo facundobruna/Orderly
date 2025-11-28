@@ -151,7 +151,7 @@ export function SplitPayment({ total, onSplitChange }: SplitPaymentProps) {
           )}
 
           {/* Información adicional */}
-          <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+          <div className="text-xs text-muted-foreground bg-burgundy-50 dark:bg-burgundy-950 p-3 rounded-lg">
             <p>
               💡 Cada persona recibirá un link único para pagar su parte. El
               pedido se confirmará cuando todos hayan completado su pago.

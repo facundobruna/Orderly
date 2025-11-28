@@ -9,11 +9,12 @@ import { Orden, Negocio } from "@/types";
 import { Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 const ESTADO_COLORS = {
   pendiente: "bg-yellow-100 text-yellow-800",
   aceptado: "bg-purple-100 text-purple-800",
-  en_preparacion: "bg-blue-100 text-blue-800",
+  en_preparacion: "bg-burgundy-100 text-burgundy-800",
   listo: "bg-green-100 text-green-800",
   entregado: "bg-gray-100 text-gray-800",
   cancelado: "bg-red-100 text-red-800",
@@ -29,7 +30,8 @@ const ESTADO_LABELS = {
 };
 
 export default function OrdenesPage() {
-  const { success, error: showError } = useToast();
+  const { success } = useToast();
+  const { handleError } = useApiError({ context: "AdminOrdenesPage" });
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [selectedNegocio, setSelectedNegocio] = useState<number | null>(null);
@@ -60,7 +62,7 @@ export default function OrdenesPage() {
       }
     } catch (error) {
       console.error("[OrdenesPage] Error loading negocios:", error);
-      showError("Error al cargar los negocios", "Error de carga");
+      handleError(error, "Error al cargar los negocios");
     }
   };
 
@@ -101,7 +103,7 @@ export default function OrdenesPage() {
       setOrdenes(orders);
     } catch (error) {
       console.error("[OrdenesPage] Error loading ordenes:", error);
-      showError("Error al cargar las órdenes", "Error de carga");
+      handleError(error, "Error al cargar las órdenes");
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +119,7 @@ export default function OrdenesPage() {
       success(`Estado actualizado a "${ESTADO_LABELS[nuevoEstado as keyof typeof ESTADO_LABELS]}"`, "Estado actualizado");
     } catch (error) {
       console.error("[OrdenesPage] Error updating order status:", error);
-      showError("Error al actualizar el estado de la orden", "Error");
+      handleError(error, "Error al actualizar el estado de la orden");
     } finally {
       setUpdatingId(null);
     }
@@ -148,7 +150,7 @@ export default function OrdenesPage() {
               <select
                 value={selectedNegocio || ""}
                 onChange={(e) => setSelectedNegocio(Number(e.target.value))}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-burgundy-500 focus:outline-none focus:ring-1 focus:ring-burgundy-500"
               >
                 {negocios.map((negocio) => (
                   <option key={negocio.id_negocio} value={negocio.id_negocio}>
@@ -159,14 +161,14 @@ export default function OrdenesPage() {
 
               <div className="flex gap-2 ml-4">
                 <Button
-                  variant={filter === "activas" ? "default" : "outline"}
+                  variant={filter === "activas" ? "outline" : "default"}
                   size="sm"
                   onClick={() => setFilter("activas")}
                 >
                   Activas
                 </Button>
                 <Button
-                  variant={filter === "todas" ? "default" : "outline"}
+                  variant={filter === "todas" ? "outline" : "default"}
                   size="sm"
                   onClick={() => setFilter("todas")}
                 >
@@ -188,7 +190,7 @@ export default function OrdenesPage() {
               placeholder="Buscar por ID, mesa, estado, productos..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-burgundy-500 focus:outline-none focus:ring-1 focus:ring-burgundy-500"
             />
             {searchQuery && (
               <Button
@@ -205,7 +207,7 @@ export default function OrdenesPage() {
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <div className="text-center">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mx-auto" />
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-burgundy-600 mx-auto" />
               <p className="mt-4 text-gray-600">Cargando órdenes...</p>
             </div>
           </div>
@@ -274,7 +276,7 @@ export default function OrdenesPage() {
                     {/* Total */}
                     <div className="border-t pt-3 flex justify-between items-center">
                       <span className="font-semibold">Total:</span>
-                      <span className="text-xl font-bold text-blue-600">{formatCurrency(orden.total)}</span>
+                      <span className="text-xl font-bold text-burgundy-600">{formatCurrency(orden.total)}</span>
                     </div>
 
                     {/* Actions */}

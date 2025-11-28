@@ -29,21 +29,14 @@ func main() {
 		cfg.MySQL.DB,
 	)
 
-	// 🗄️ Inicializar repository de negocios (usa la misma DB que usuarios)
-	// Obtenemos la conexión de gorm desde el usersRepo y creamos el negociosRepo
-	// Para esto, necesitamos exponer el DB o crear el repo diferente
-	// Por ahora, usaremos usersRepo como base para obtener la DB
 	negociosRepo := repository.NewNegociosRepository(usersRepo.GetDB())
 	mesasRepo := repository.NewMesaRepository(usersRepo.GetDB())
 
-	// 💼 Inicializar service de usuarios
 	usersService := services.NewUsersService(usersRepo)
 
-	// 💼 Inicializar service de negocios
 	negociosService := services.NewNegociosService(negociosRepo, usersRepo, cfg.Mapbox)
 	mesasService := services.NewMesaService(mesasRepo, negociosRepo)
 
-	// 🎮 Inicializar controllers
 	authController := controllers.NewAuthController(usersService)
 	usersController := controllers.NewUsersController(usersService)
 	negociosController := controllers.NewNegociosController(negociosService)

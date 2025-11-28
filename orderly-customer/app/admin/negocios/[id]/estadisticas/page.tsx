@@ -217,7 +217,7 @@ export default function EstadisticasNegocioPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mx-auto" />
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-burgundy-600 mx-auto" />
           <p className="mt-4 text-gray-600">Cargando estadísticas...</p>
         </div>
       </div>
@@ -262,7 +262,7 @@ export default function EstadisticasNegocioPage() {
               <CardTitle className="text-sm font-medium text-gray-600">
                 Ventas Hoy
               </CardTitle>
-              <ShoppingBag className="h-5 w-5 text-blue-600" />
+              <ShoppingBag className="h-5 w-5 text-burgundy-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.ventasHoy}</div>
@@ -335,7 +335,7 @@ export default function EstadisticasNegocioPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Package className="mr-2 h-5 w-5 text-blue-600" />
+                <Package className="mr-2 h-5 w-5 text-burgundy-600" />
                 Top 10 Productos Más Vendidos
               </CardTitle>
             </CardHeader>
@@ -348,7 +348,7 @@ export default function EstadisticasNegocioPage() {
                       className="flex items-center justify-between border-b pb-3 last:border-0"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-600">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-burgundy-100 text-sm font-bold text-burgundy-600">
                           {index + 1}
                         </div>
                         <div>

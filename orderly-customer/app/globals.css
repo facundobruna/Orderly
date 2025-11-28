@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #8B1538;
+  --color-primary-foreground: #ffffff;
+  --color-primary-hover: #6B0F2B;
+
+  /* Tonalidades bordo para diferentes usos */
+  --color-burgundy-50: #FDF2F4;
+  --color-burgundy-100: #FCE4E9;
+  --color-burgundy-200: #F9CCD7;
+  --color-burgundy-300: #F4A4B8;
+  --color-burgundy-400: #ED7090;
+  --color-burgundy-500: #E14268;
+  --color-burgundy-600: #CB1F4A;
+  --color-burgundy-700: #8B1538;
+  --color-burgundy-800: #6B0F2B;
+  --color-burgundy-900: #4A0A1E;
+  --color-burgundy-950: #2A0511;
+}

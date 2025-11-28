@@ -13,17 +13,18 @@ import { UpdateNegocioRequest, Negocio } from "@/types";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/lib/contexts/ToastContext";
+import { useApiError } from "@/lib/hooks/useApiError";
 
 export default function EditarNegocioPage() {
   const router = useRouter();
   const params = useParams();
-  const { success, error: showError } = useToast();
+  const { success } = useToast();
+  const { handleError } = useApiError({ context: "EditNegocioPage" });
   const negocioId = Number(params.id);
 
   const [negocio, setNegocio] = useState<Negocio | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState("");
   const [formData, setFormData] = useState<UpdateNegocioRequest>({
     nombre: "",
     descripcion: "",
@@ -52,8 +53,7 @@ export default function EditarNegocioPage() {
       });
     } catch (err) {
       console.error("Error loading negocio:", err);
-      setError("Error al cargar el negocio");
-      showError("No se pudo cargar el negocio", "Error de carga");
+      handleError(err, "Error al cargar el negocio");
     } finally {
       setIsLoading(false);
     }
@@ -69,9 +69,17 @@ export default function EditarNegocioPage() {
     });
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Solo permitir números, +, -, espacios y paréntesis
+    const value = e.target.value.replace(/[^\d+\-\s()]/g, '');
+    setFormData({
+      ...formData,
+      telefono: value,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     try {
       setIsSaving(true);
@@ -80,7 +88,7 @@ export default function EditarNegocioPage() {
       router.push("/admin/negocios");
     } catch (err: any) {
       console.error("Error updating negocio:", err);
-      setError(err.response?.data?.message || "Error al actualizar el negocio");
+      handleError(err, "Error al actualizar el negocio");
     } finally {
       setIsSaving(false);
     }
@@ -90,7 +98,7 @@ export default function EditarNegocioPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mx-auto" />
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-burgundy-600 mx-auto" />
           <p className="mt-4 text-gray-600">Cargando negocio...</p>
         </div>
       </div>
@@ -104,7 +112,7 @@ export default function EditarNegocioPage() {
         <div className="p-8">
           <Card>
             <CardContent className="p-6 text-center">
-              <p className="text-red-600">{error || "Negocio no encontrado"}</p>
+              <p className="text-red-600">Negocio no encontrado</p>
               <Link href="/admin/negocios" className="mt-4 inline-block">
                 <Button>Volver a Negocios</Button>
               </Link>
@@ -135,12 +143,6 @@ export default function EditarNegocioPage() {
         <Card className="max-w-2xl">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
-                  {error}
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="nombre">Nombre del Negocio</Label>
                 <Input
@@ -181,8 +183,9 @@ export default function EditarNegocioPage() {
                   <Input
                     id="telefono"
                     name="telefono"
+                    type="tel"
                     value={formData.telefono}
-                    onChange={handleChange}
+                    onChange={handlePhoneChange}
                     placeholder="+54 11 1234-5678"
                   />
                 </div>
@@ -206,7 +209,7 @@ export default function EditarNegocioPage() {
                   name="activo"
                   checked={formData.activo}
                   onChange={handleChange}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-gray-300 text-burgundy-600 focus:ring-burgundy-500"
                 />
                 <Label htmlFor="activo" className="cursor-pointer">
                   Negocio activo

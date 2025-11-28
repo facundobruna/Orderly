@@ -51,23 +51,23 @@ export function AdminSidebar() {
   };
 
   return (
-    <div className="flex h-screen w-64 flex-col bg-gray-900 text-white">
+    <div className="flex h-screen w-64 flex-col bg-burgundy-50 text-gray-900">
       {/* Header */}
-      <div className="flex h-16 items-center justify-between border-b border-gray-800 px-6">
-        <h1 className="text-xl font-bold">Orderly Admin</h1>
+      <div className="flex h-16 items-center justify-between border-b border-burgundy-200 px-6">
+        <h1 className="text-xl font-bold text-burgundy-800">Orderly Admin</h1>
       </div>
 
       {/* User info */}
-      <div className="border-b border-gray-800 p-4">
+      <div className="border-b border-burgundy-200 p-4">
         <div className="flex items-center space-x-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-burgundy-600">
             {user?.nombre.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">
+            <p className="text-sm font-medium truncate text-gray-900">
               {user?.nombre} {user?.apellido}
             </p>
-            <p className="text-xs text-gray-400 truncate">@{user?.username}</p>
+            <p className="text-xs text-gray-600 truncate">@{user?.username}</p>
           </div>
         </div>
       </div>
@@ -88,8 +88,8 @@ export function AdminSidebar() {
                 group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
                 ${
                   isActive
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    ? "bg-burgundy-600 text-white"
+                    : "text-gray-700 hover:bg-burgundy-100 hover:text-burgundy-800"
                 }
               `}
             >
@@ -104,10 +104,10 @@ export function AdminSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-gray-800 p-4">
+      <div className="border-t border-burgundy-200 p-4">
         <button
           onClick={handleLogout}
-          className="flex w-full items-center rounded-lg px-3 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+          className="flex w-full items-center rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-burgundy-100 hover:text-burgundy-800"
         >
           <LogOut className="mr-3 h-5 w-5" />
           Cerrar Sesión

@@ -1,5 +1,6 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useAuthStore } from "@/lib/store/authStore";
+import { logError } from "@/lib/errorHandling";
 
 // API Base URLs
 export const USERS_API_URL =
@@ -58,23 +59,48 @@ addAuthInterceptor(ordersClient);
 addAuthInterceptor(paymentsClient);
 
 // Add response error interceptor
-const addErrorInterceptor = (client: typeof axios) => {
+const addErrorInterceptor = (client: typeof axios, clientName: string) => {
   client.interceptors.response.use(
     (response) => response,
-    (error) => {
+    (error: AxiosError) => {
+      // Log all errors for debugging
+      logError(error, `API Client - ${clientName}`);
+
+      // Handle authentication errors (401)
       if (error.response?.status === 401) {
         // Clear auth on unauthorized
         useAuthStore.getState().clearAuth();
+
+        // Only redirect if we're in the browser
         if (typeof window !== "undefined") {
-          window.location.href = "/login";
+          // Avoid redirect loops - don't redirect if already on login page
+          if (!window.location.pathname.includes("/login")) {
+            window.location.href = "/login";
+          }
         }
       }
+
+      // Handle network errors
+      if (!error.response && error.code === "ERR_NETWORK") {
+        console.error(
+          `[${clientName}] Error de red: No se pudo conectar al servidor. Verifica tu conexión a internet.`
+        );
+      }
+
+      // Handle timeout errors
+      if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+        console.error(
+          `[${clientName}] Timeout: La solicitud tardó demasiado tiempo en responder.`
+        );
+      }
+
+      // Reject the error to allow component-level handling
       return Promise.reject(error);
     }
   );
 };
 
-addErrorInterceptor(usersClient);
-addErrorInterceptor(productsClient);
-addErrorInterceptor(ordersClient);
-addErrorInterceptor(paymentsClient);
+addErrorInterceptor(usersClient, "Users API");
+addErrorInterceptor(productsClient, "Products API");
+addErrorInterceptor(ordersClient, "Orders API");
+addErrorInterceptor(paymentsClient, "Payments API");
