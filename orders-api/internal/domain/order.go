@@ -2,7 +2,6 @@ package domain
 
 import "time"
 
-// EstadoOrden - constantes para los estados válidos
 const (
 	EstadoPendiente     = "pendiente"
 	EstadoAceptado      = "aceptado"
@@ -12,7 +11,6 @@ const (
 	EstadoCancelado     = "cancelado"
 )
 
-// EstadosValidos - slice con todos los estados válidos
 var EstadosValidos = []string{
 	EstadoPendiente,
 	EstadoAceptado,
@@ -22,7 +20,6 @@ var EstadosValidos = []string{
 	EstadoCancelado,
 }
 
-// ValidarEstado verifica si un estado es válido
 func ValidarEstado(estado string) bool {
 	for _, e := range EstadosValidos {
 		if e == estado {

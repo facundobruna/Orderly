@@ -144,7 +144,6 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]domain.P
 
 	if query != "*:*" && !containsColon(query) {
 		wildcardQuery := "*" + query + "*"
-		// Buscar en nombre, descripción o tags con wildcards
 		query = fmt.Sprintf("(nombre:%s OR descripcion:%s OR tags:%s)", wildcardQuery, wildcardQuery, wildcardQuery)
 	}
 
@@ -153,14 +152,12 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]domain.P
 	q.Add("rows", "100") // Cantidad de resultados
 	q.Add("start", "0")  // Offset
 
-	// Agregar filtros (fq = filter query)
 	for key, value := range filters {
 		q.Add("fq", fmt.Sprintf("%s:%s", key, value))
 	}
 
 	req.URL.RawQuery = q.Encode()
 
-	// PASO 3: Enviar request
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error enviando a Solr: %w", err)
@@ -171,7 +168,6 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]domain.P
 		return nil, fmt.Errorf("Solr retornó status %d", resp.StatusCode)
 	}
 
-	// PASO 4: Parsear respuesta con la estructura que Solr devuelve (arrays)
 	var solrResp struct {
 		Response struct {
 			NumFound int                    `json:"numFound"`
@@ -183,7 +179,6 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]domain.P
 		return nil, fmt.Errorf("error parseando respuesta: %w", err)
 	}
 
-	// PASO 5: Convertir SolrProductoResponse a domain.Producto
 	productos := make([]domain.Producto, len(solrResp.Response.Docs))
 	for i, doc := range solrResp.Response.Docs {
 		productos[i] = domain.Producto{
@@ -201,8 +196,6 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]domain.P
 
 	return productos, nil
 }
-
-// Helper functions para extraer el primer elemento de arrays
 
 func getFirstString(arr []string) string {
 	if len(arr) > 0 {
@@ -234,7 +227,6 @@ func containsColon(s string) bool {
 	return false
 }
 
-// Ping verifica que Solr esté disponible
 func (s *SolrClient) Ping() error {
 	url := fmt.Sprintf("%s/admin/ping", s.baseURL)
 	resp, err := s.client.Get(url)

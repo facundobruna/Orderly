@@ -1,4 +1,3 @@
-// Seed some data if the collection is empty
 db = db.getSiblingDB(process.env.MONGO_INITDB_DATABASE || "demo");
 const col = db.getCollection("items");
 if (col.countDocuments() === 0) {

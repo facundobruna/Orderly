@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ProductosService define la lógica de negocio para productos
 type ProductosService interface {
 	Create(ctx context.Context, req domain.CreateProductoRequest) (domain.Producto, error)
 	GetByID(ctx context.Context, id string) (domain.Producto, error)
@@ -20,17 +19,14 @@ type ProductosService interface {
 	SearchProducts(ctx context.Context, query string, filters map[string]string) ([]domain.Producto, error)
 }
 
-// ProductosController maneja las peticiones HTTP para productos
 type ProductosController struct {
 	service ProductosService
 }
 
-// NewProductosController crea una nueva instancia del controller
 func NewProductosController(service ProductosService) *ProductosController {
 	return &ProductosController{service: service}
 }
 
-// Create maneja POST /products
 func (c *ProductosController) Create(ctx *gin.Context) {
 	var req domain.CreateProductoRequest
 
@@ -67,7 +63,6 @@ func (c *ProductosController) Create(ctx *gin.Context) {
 	})
 }
 
-// GetByID maneja GET /products/:id
 func (c *ProductosController) GetByID(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -88,7 +83,6 @@ func (c *ProductosController) GetByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, producto)
 }
 
-// List maneja GET /products
 func (c *ProductosController) List(ctx *gin.Context) {
 	filters := domain.SearchFilters{
 		NegocioID:  ctx.Query("negocio_id"),
@@ -97,19 +91,15 @@ func (c *ProductosController) List(ctx *gin.Context) {
 		Nombre:     ctx.Query("nombre"),
 	}
 
-	// Parse disponible
 	if disponibleStr := ctx.Query("disponible"); disponibleStr != "" {
 		disponible := disponibleStr == "true"
 		filters.Disponible = &disponible
 	}
 
-	// Parse tags
 	if tagsStr := ctx.Query("tags"); tagsStr != "" {
-		// Asumimos tags separados por comas: ?tags=vegetariano,picante
 		filters.Tags = []string{tagsStr}
 	}
 
-	// Parse paginación
 	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
 	filters.Page = page
@@ -127,7 +117,6 @@ func (c *ProductosController) List(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-// Update maneja PUT /products/:id
 func (c *ProductosController) Update(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -163,7 +152,6 @@ func (c *ProductosController) Update(ctx *gin.Context) {
 	})
 }
 
-// Delete maneja DELETE /products/:id
 func (c *ProductosController) Delete(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -185,7 +173,6 @@ func (c *ProductosController) Delete(ctx *gin.Context) {
 	})
 }
 
-// Quote maneja POST /products/:id/quote
 func (c *ProductosController) Quote(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -227,12 +214,11 @@ func (c *ProductosController) Quote(ctx *gin.Context) {
 	})
 }
 func (c *ProductosController) SearchProducts(ctx *gin.Context) {
-	query := ctx.Query("q") // Query de búsqueda
+	query := ctx.Query("q")
 	if query == "" {
-		query = "*:*" // Todos si no hay query
+		query = "*:*"
 	}
 
-	// Filtros opcionales
 	filters := make(map[string]string)
 	if categoria := ctx.Query("categoria"); categoria != "" {
 		filters["categoria"] = categoria
@@ -241,7 +227,6 @@ func (c *ProductosController) SearchProducts(ctx *gin.Context) {
 		filters["negocio_id"] = negocioID
 	}
 
-	// Buscar en Solr (necesitas agregar método Search al servicio)
 	resultados, err := c.service.SearchProducts(ctx, query, filters)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

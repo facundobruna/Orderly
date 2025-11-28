@@ -21,15 +21,13 @@ func NewMesaService(mesaRepo *repository.MesaRepository, negocioRepo *repository
 	}
 }
 
-// CreateMesa crea una nueva mesa y genera su código QR
 func (s *MesaService) CreateMesa(negocioID uint64, req *domain.CreateMesaRequest) (*domain.MesaResponse, error) {
-	// Verificar que el negocio existe
+
 	_, err := s.negocioRepo.GetnegocioByID(context.Background(), negocioID)
 	if err != nil {
 		return nil, fmt.Errorf("negocio not found: %w", err)
 	}
 
-	// Generar código QR (base64 de JSON con datos de mesa)
 	qrData := map[string]interface{}{
 		"negocio_id":  negocioID,
 		"mesa":        req.Numero,
@@ -43,7 +41,6 @@ func (s *MesaService) CreateMesa(negocioID uint64, req *domain.CreateMesaRequest
 
 	qrCode := base64.StdEncoding.EncodeToString(qrJSON)
 
-	// Crear la mesa
 	mesa := &domain.Mesa{
 		Numero:     req.Numero,
 		NegocioID:  negocioID,
@@ -60,7 +57,6 @@ func (s *MesaService) CreateMesa(negocioID uint64, req *domain.CreateMesaRequest
 	return &response, nil
 }
 
-// GetMesasByNegocio obtiene todas las mesas de un negocio
 func (s *MesaService) GetMesasByNegocio(negocioID uint64) ([]domain.MesaResponse, error) {
 	mesas, err := s.mesaRepo.FindByNegocio(negocioID)
 	if err != nil {
@@ -75,7 +71,6 @@ func (s *MesaService) GetMesasByNegocio(negocioID uint64) ([]domain.MesaResponse
 	return responses, nil
 }
 
-// GetMesaByID obtiene una mesa por ID
 func (s *MesaService) GetMesaByID(id uint64) (*domain.MesaResponse, error) {
 	mesa, err := s.mesaRepo.FindByID(id)
 	if err != nil {
@@ -86,7 +81,6 @@ func (s *MesaService) GetMesaByID(id uint64) (*domain.MesaResponse, error) {
 	return &response, nil
 }
 
-// UpdateMesa actualiza una mesa
 func (s *MesaService) UpdateMesa(id uint64, req *domain.CreateMesaRequest) (*domain.MesaResponse, error) {
 	mesa, err := s.mesaRepo.FindByID(id)
 	if err != nil {
@@ -96,7 +90,6 @@ func (s *MesaService) UpdateMesa(id uint64, req *domain.CreateMesaRequest) (*dom
 	mesa.Numero = req.Numero
 	mesa.SucursalID = req.SucursalID
 
-	// Regenerar QR code con los nuevos datos
 	qrData := map[string]interface{}{
 		"negocio_id":  mesa.NegocioID,
 		"mesa":        mesa.Numero,
@@ -118,7 +111,6 @@ func (s *MesaService) UpdateMesa(id uint64, req *domain.CreateMesaRequest) (*dom
 	return &response, nil
 }
 
-// DeleteMesa elimina una mesa
 func (s *MesaService) DeleteMesa(id uint64) error {
 	_, err := s.mesaRepo.FindByID(id)
 	if err != nil {

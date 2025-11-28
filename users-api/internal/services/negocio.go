@@ -29,7 +29,6 @@ type NegociosService struct {
 	geocodingService *GeocodingService
 }
 
-// NewNegociosService crea una nueva instancia de NegociosService
 func NewNegociosService(repo negocioRepository, userRepo userRepository, cfg config.MapboxConfig) *NegociosService {
 	return &NegociosService{
 		repo:             repo,
@@ -38,7 +37,6 @@ func NewNegociosService(repo negocioRepository, userRepo userRepository, cfg con
 	}
 }
 
-// GetnegocioByID obtiene un negocio por su ID
 func (s *NegociosService) GetnegocioByID(ctx context.Context, id uint64) (domain.Negocio, error) {
 	negocioDAO, err := s.repo.GetnegocioByID(ctx, id)
 	if err != nil {
@@ -47,7 +45,6 @@ func (s *NegociosService) GetnegocioByID(ctx context.Context, id uint64) (domain
 	return negocioDAO.ToDomain(), nil
 }
 
-// validateCreateNegocioRequest valida los datos del request
 func (s *NegociosService) validateCreateNegocioRequest(req domain.CreateNegocioRequest) error {
 	if req.Nombre == "" {
 		return errors.New("El nombre del negocio es requerido")
@@ -90,11 +87,10 @@ func (s *NegociosService) CreateNegocio(ctx context.Context, userID uint64, req 
 		IDUsuario:   userID,
 	}
 
-	// Intentar geocodificar la dirección
 	coords, err := s.geocodingService.Geocode(req.Direccion)
 	if err != nil {
 		log.Printf("[NegociosService] Warning: No se pudo geocodificar la dirección '%s': %v", req.Direccion, err)
-		// Continuar sin coordenadas - no es un error crítico
+
 	} else {
 		negocioDAO.Latitud = &coords.Latitud
 		negocioDAO.Longitud = &coords.Longitud
@@ -109,7 +105,6 @@ func (s *NegociosService) CreateNegocio(ctx context.Context, userID uint64, req 
 	return createdNegocio.ToDomain(), nil
 }
 
-// ListNegociosByUsuario obtiene todos los negocios de un usuario
 func (s *NegociosService) ListNegociosByUsuario(ctx context.Context, userID uint64) ([]domain.Negocio, error) {
 	negociosDAO, err := s.repo.ListNegociosByUsuario(ctx, userID)
 	if err != nil {
@@ -124,7 +119,6 @@ func (s *NegociosService) ListNegociosByUsuario(ctx context.Context, userID uint
 	return negocios, nil
 }
 
-// ListAllNegocios obtiene todos los negocios activos
 func (s *NegociosService) ListAllNegocios(ctx context.Context) ([]domain.Negocio, error) {
 	negociosDAO, err := s.repo.ListAllNegocios(ctx)
 	if err != nil {
@@ -139,7 +133,6 @@ func (s *NegociosService) ListAllNegocios(ctx context.Context) ([]domain.Negocio
 	return negocios, nil
 }
 
-// UpdateNegocio actualiza un negocio existente
 func (s *NegociosService) UpdateNegocio(ctx context.Context, negocioID uint64, userID uint64, req domain.UpdateNegocioRequest) (domain.Negocio, error) {
 	// Verificar que el negocio pertenezca al usuario
 	belongs, err := s.repo.CheckNegocioBelongsToUser(ctx, negocioID, userID)
@@ -150,7 +143,6 @@ func (s *NegociosService) UpdateNegocio(ctx context.Context, negocioID uint64, u
 		return domain.Negocio{}, errors.New("No tienes permisos para actualizar este negocio")
 	}
 
-	// Construir el mapa de actualizaciones solo con los campos que se enviaron
 	updates := make(map[string]interface{})
 	if req.Nombre != nil {
 		updates["nombre"] = *req.Nombre
@@ -161,7 +153,6 @@ func (s *NegociosService) UpdateNegocio(ctx context.Context, negocioID uint64, u
 	if req.Direccion != nil {
 		updates["direccion"] = *req.Direccion
 
-		// Si cambia la dirección, re-geocodificar
 		coords, err := s.geocodingService.Geocode(*req.Direccion)
 		if err != nil {
 			log.Printf("[NegociosService] Warning: No se pudo re-geocodificar la dirección '%s': %v", *req.Direccion, err)
@@ -178,12 +169,10 @@ func (s *NegociosService) UpdateNegocio(ctx context.Context, negocioID uint64, u
 		updates["sucursal"] = *req.Sucursal
 	}
 
-	// Si no hay nada que actualizar
 	if len(updates) == 0 {
 		return domain.Negocio{}, errors.New("No hay campos para actualizar")
 	}
 
-	// Actualizar el negocio
 	updatedNegocio, err := s.repo.UpdateNegocio(ctx, negocioID, updates)
 	if err != nil {
 		return domain.Negocio{}, err
@@ -192,7 +181,6 @@ func (s *NegociosService) UpdateNegocio(ctx context.Context, negocioID uint64, u
 	return updatedNegocio.ToDomain(), nil
 }
 
-// DeleteNegocio elimina (soft delete) un negocio
 func (s *NegociosService) DeleteNegocio(ctx context.Context, negocioID uint64, userID uint64) error {
 	// Verificar que el negocio pertenezca al usuario
 	belongs, err := s.repo.CheckNegocioBelongsToUser(ctx, negocioID, userID)
@@ -203,11 +191,9 @@ func (s *NegociosService) DeleteNegocio(ctx context.Context, negocioID uint64, u
 		return errors.New("No tienes permisos para eliminar este negocio")
 	}
 
-	// Eliminar el negocio (soft delete)
 	return s.repo.DeleteNegocio(ctx, negocioID)
 }
 
-// ExistsNegocio verifica si un negocio existe
 func (s *NegociosService) ExistsNegocio(ctx context.Context, id uint64) (bool, error) {
 	_, err := s.repo.GetnegocioByID(ctx, id)
 	if err != nil {
@@ -219,7 +205,6 @@ func (s *NegociosService) ExistsNegocio(ctx context.Context, id uint64) (bool, e
 	return true, nil
 }
 
-// SearchAddresses busca direcciones para autocomplete
 func (s *NegociosService) SearchAddresses(query string) ([]AddressSuggestion, error) {
 	return s.geocodingService.SearchAddresses(query)
 }

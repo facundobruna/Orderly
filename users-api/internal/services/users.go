@@ -10,7 +10,6 @@ import (
 	"users-api/internal/utils"
 )
 
-// UsersRepository define las operaciones de datos para usuarios
 type UsersRepository interface {
 	CreateUser(ctx context.Context, user dao.Usuario) (dao.Usuario, error)
 	GetUserByUsername(ctx context.Context, username string) (dao.Usuario, error)
@@ -24,12 +23,10 @@ func NewUsersService(repo UsersRepository) *UsersService {
 	return &UsersService{repo: repo}
 }
 
-// UsersService implementa la lógica de negocio para usuarios
 type UsersService struct {
 	repo UsersRepository
 }
 
-// Register registra un nuevo usuario y retorna un JWT
 func (s *UsersService) Register(ctx context.Context, req domain.RegisterRequest) (domain.LoginResponse, error) {
 	if err := s.validateRegisterRequest(req); err != nil {
 		return domain.LoginResponse{}, err
@@ -82,7 +79,6 @@ func (s *UsersService) Register(ctx context.Context, req domain.RegisterRequest)
 	}, nil
 }
 
-// Login autentica un usuario y retorna un JWT
 func (s *UsersService) Login(ctx context.Context, req domain.LoginRequest) (domain.LoginResponse, error) {
 	userDAO, err := s.repo.GetUserByUsername(ctx, req.Username)
 	var usuario domain.Usuario
@@ -110,7 +106,6 @@ func (s *UsersService) Login(ctx context.Context, req domain.LoginRequest) (doma
 	}, nil
 }
 
-// GetUserByID obtiene un usuario por su ID
 func (s *UsersService) GetUserByID(ctx context.Context, id uint64) (domain.Usuario, error) {
 	userDAO, err := s.repo.GetUserByID(ctx, id)
 	if err != nil {

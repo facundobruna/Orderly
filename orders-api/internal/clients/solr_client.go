@@ -10,14 +10,12 @@ import (
 	"time"
 )
 
-// SolrClient es el cliente para interactuar con Apache Solr
 type SolrClient struct {
 	baseURL string // URL base de Solr (ej: http://localhost:8983/solr/demo)
 	core    string // Nombre del core (ej: demo)
 	client  *http.Client
 }
 
-// NewSolrClient crea una nueva instancia del cliente Solr
 func NewSolrClient(host, port, core string) *SolrClient {
 	baseURL := fmt.Sprintf("http://%s:%s/solr/%s", host, port, core)
 
@@ -30,7 +28,6 @@ func NewSolrClient(host, port, core string) *SolrClient {
 	}
 }
 
-// SolrOrden representa una orden en el formato que Solr espera
 type SolrOrden struct {
 	ID            string   `json:"id"`
 	NegocioID     string   `json:"negocio_id"`
@@ -40,11 +37,10 @@ type SolrOrden struct {
 	Estado        string   `json:"estado"`
 	Total         float64  `json:"total"`
 	Observaciones string   `json:"observaciones"`
-	CreatedAt     string   `json:"created_at"` // ISO 8601 format
-	ItemsText     []string `json:"items_text"` // Nombres de productos para búsqueda
+	CreatedAt     string   `json:"created_at"`
+	ItemsText     []string `json:"items_text"`
 }
 
-// SolrOrdenResponse representa una orden como Solr la devuelve (con arrays)
 type SolrOrdenResponse struct {
 	ID            string    `json:"id"`
 	NegocioID     []string  `json:"negocio_id"`
@@ -58,15 +54,13 @@ type SolrOrdenResponse struct {
 	ItemsText     []string  `json:"items_text"`
 }
 
-// Index indexa una orden en Solr
 func (s *SolrClient) Index(orden domain.Orden) error {
-	// Construir lista de nombres de productos para búsqueda
+
 	itemsText := make([]string, 0, len(orden.Items))
 	for _, item := range orden.Items {
 		itemsText = append(itemsText, item.NombreProducto)
 	}
 
-	// Convertir a formato Solr
 	solrDoc := SolrOrden{
 		ID:            orden.ID,
 		NegocioID:     orden.NegocioID,
@@ -80,7 +74,6 @@ func (s *SolrClient) Index(orden domain.Orden) error {
 		ItemsText:     itemsText,
 	}
 
-	// Crear payload en formato que Solr espera
 	payload := map[string]interface{}{
 		"add": map[string]interface{}{
 			"doc": solrDoc,
@@ -92,7 +85,6 @@ func (s *SolrClient) Index(orden domain.Orden) error {
 		return fmt.Errorf("error serializando documento: %w", err)
 	}
 
-	// Enviar a Solr
 	url := fmt.Sprintf("%s/update?commit=true", s.baseURL)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -114,12 +106,10 @@ func (s *SolrClient) Index(orden domain.Orden) error {
 	return nil
 }
 
-// Update actualiza una orden en Solr (en Solr, update = add/sobrescribe por ID)
 func (s *SolrClient) Update(orden domain.Orden) error {
 	return s.Index(orden)
 }
 
-// Delete elimina un documento de Solr por ID
 func (s *SolrClient) Delete(id string) error {
 	payload := map[string]interface{}{
 		"delete": map[string]interface{}{
@@ -153,7 +143,6 @@ func (s *SolrClient) Delete(id string) error {
 	return nil
 }
 
-// Search busca órdenes en Solr
 func (s *SolrClient) Search(query string, filters map[string]string) ([]string, error) {
 	url := fmt.Sprintf("%s/select", s.baseURL)
 
@@ -164,7 +153,6 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]string, 
 
 	q := req.URL.Query()
 
-	// Si la query no tiene campo específico y no es *:*, buscar en campos de texto
 	if query != "*:*" && !containsColon(query) {
 		// Agregar wildcards para búsqueda parcial
 		wildcardQuery := "*" + query + "*"
@@ -178,7 +166,6 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]string, 
 	q.Add("rows", "100")
 	q.Add("start", "0")
 
-	// Agregar filtros (fq = filter query)
 	for key, value := range filters {
 		q.Add("fq", fmt.Sprintf("%s:%s", key, value))
 	}
@@ -195,7 +182,6 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]string, 
 		return nil, fmt.Errorf("Solr retornó status %d", resp.StatusCode)
 	}
 
-	// Parsear respuesta
 	var solrResp struct {
 		Response struct {
 			NumFound int                 `json:"numFound"`
@@ -207,7 +193,6 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]string, 
 		return nil, fmt.Errorf("error parseando respuesta: %w", err)
 	}
 
-	// Extraer solo los IDs de las órdenes encontradas
 	ids := make([]string, len(solrResp.Response.Docs))
 	for i, doc := range solrResp.Response.Docs {
 		ids[i] = doc.ID
@@ -216,27 +201,10 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]string, 
 	return ids, nil
 }
 
-// Helper functions
-
-func getFirstString(arr []string) string {
-	if len(arr) > 0 {
-		return arr[0]
-	}
-	return ""
-}
-
-func getFirstFloat(arr []float64) float64 {
-	if len(arr) > 0 {
-		return arr[0]
-	}
-	return 0
-}
-
 func containsColon(s string) bool {
 	return strings.Contains(s, ":")
 }
 
-// Ping verifica que Solr esté disponible
 func (s *SolrClient) Ping() error {
 	url := fmt.Sprintf("%s/admin/ping", s.baseURL)
 	resp, err := s.client.Get(url)

@@ -9,13 +9,11 @@ import (
 	"time"
 )
 
-// ProductsAPIClient cliente para comunicarse con products-api
 type ProductsAPIClient struct {
 	baseURL    string
 	httpClient *http.Client
 }
 
-// NewProductsAPIClient crea una nueva instancia del cliente
 func NewProductsAPIClient(baseURL string) *ProductsAPIClient {
 	return &ProductsAPIClient{
 		baseURL: baseURL,
@@ -25,13 +23,11 @@ func NewProductsAPIClient(baseURL string) *ProductsAPIClient {
 	}
 }
 
-// QuoteRequest request para obtener cotización de un producto
 type QuoteRequest struct {
 	Variante      string   `json:"variante"`
 	Modificadores []string `json:"modificadores"`
 }
 
-// QuoteResponse respuesta del endpoint /products/:id/quote
 type QuoteResponse struct {
 	ProductoID    string   `json:"producto_id"`
 	Variante      string   `json:"variante"`
@@ -39,7 +35,6 @@ type QuoteResponse struct {
 	PrecioTotal   float64  `json:"precio_total"`
 }
 
-// ProductoDetalle información completa de un producto
 type ProductoDetalle struct {
 	ID            string                `json:"id"`
 	Nombre        string                `json:"nombre"`
@@ -58,7 +53,6 @@ type ProductoModificador struct {
 	PrecioAdicional float64 `json:"precio_adicional"`
 }
 
-// GetQuote obtiene la cotización de un producto con variantes y modificadores
 func (c *ProductsAPIClient) GetQuote(ctx context.Context, productoID string, varianteNombre string, modificadores []string) (QuoteResponse, error) {
 	url := fmt.Sprintf("%s/products/%s/quote", c.baseURL, productoID)
 
@@ -101,7 +95,6 @@ func (c *ProductsAPIClient) GetQuote(ctx context.Context, productoID string, var
 	return result, nil
 }
 
-// GetProducto obtiene información detallada de un producto
 func (c *ProductsAPIClient) GetProducto(ctx context.Context, productoID string) (ProductoDetalle, error) {
 	url := fmt.Sprintf("%s/products/%s", c.baseURL, productoID)
 

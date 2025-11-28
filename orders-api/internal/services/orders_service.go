@@ -8,7 +8,6 @@ import (
 	"orders-api/internal/domain"
 )
 
-// OrdersRepository operaciones de datos
 type OrdersRepository interface {
 	Create(ctx context.Context, orden domain.Orden) (domain.Orden, error)
 	GetByID(ctx context.Context, id string) (domain.Orden, error)
@@ -18,12 +17,10 @@ type OrdersRepository interface {
 	Search(ctx context.Context, query string, filters map[string]string) ([]domain.Orden, error)
 }
 
-// UsersAPIClient valida negocios y sucursales
 type UsersAPIClient interface {
 	ValidateNegocioExists(ctx context.Context, negocioID string) (bool, error)
 }
 
-// ProductoDetalle representa la información de un producto
 type ProductoDetalle struct {
 	ID            string
 	Nombre        string
@@ -46,13 +43,11 @@ type QuoteResponse struct {
 	PrecioTotal float64
 }
 
-// ProductsAPIClient obtiene info de productos
 type ProductsAPIClient interface {
 	GetProducto(ctx context.Context, productoID string) (ProductoDetalle, error)
 	GetQuote(ctx context.Context, productoID string, varianteNombre string, modificadores []string) (QuoteResponse, error)
 }
 
-// EventPublisher publica eventos a RabbitMQ
 type EventPublisher interface {
 	Publish(ctx context.Context, action string, orderID string) error
 }
@@ -134,7 +129,6 @@ func (s *OrdersService) validateCreateRequest(req domain.CreateOrdenRequest) err
 	return nil
 }
 
-// processItems procesa cada item del request y crea los snapshots completos
 func (s *OrdersService) processItems(ctx context.Context, items []domain.CreateItemOrdenRequest) ([]domain.ItemOrden, error) {
 	result := make([]domain.ItemOrden, 0, len(items))
 
@@ -221,7 +215,6 @@ func (s *OrdersService) processItems(ctx context.Context, items []domain.CreateI
 	return result, nil
 }
 
-// calculateTotals calcula subtotal, impuestos y total
 func (s *OrdersService) calculateTotals(items []domain.ItemOrden) (subtotal, total float64) {
 
 	for _, item := range items {
@@ -264,7 +257,6 @@ func (s *OrdersService) UpdateStatus(ctx context.Context, id string, nuevoEstado
 	return updated, nil
 }
 
-// validateStateTransition valida que la transición de estado sea válida
 func (s *OrdersService) validateStateTransition(estadoActual string) error {
 	if estadoActual == domain.EstadoEntregado {
 		return errors.New("no se puede cambiar el estado de una orden entregada")
@@ -276,22 +268,18 @@ func (s *OrdersService) validateStateTransition(estadoActual string) error {
 	return nil
 }
 
-// GetOrderByID obtiene una orden por ID (alias de GetByID para compatibilidad con el controlador)
 func (s *OrdersService) GetOrderByID(ctx context.Context, id string) (domain.Orden, error) {
 	return s.GetByID(ctx, id)
 }
 
-// ListOrders lista órdenes con filtros (alias de List para compatibilidad con el controlador)
 func (s *OrdersService) ListOrders(ctx context.Context, filters domain.OrderFilters) (domain.PaginatedOrdenResponse, error) {
 	return s.List(ctx, filters)
 }
 
-// UpdateOrderStatus actualiza el estado de una orden (alias de UpdateStatus para compatibilidad con el controlador)
 func (s *OrdersService) UpdateOrderStatus(ctx context.Context, id string, nuevoEstado string) (domain.Orden, error) {
 	return s.UpdateStatus(ctx, id, nuevoEstado)
 }
 
-// CancelOrder cancela una orden
 func (s *OrdersService) CancelOrder(ctx context.Context, id string) error {
 	_, err := s.UpdateStatus(ctx, id, domain.EstadoCancelado)
 	if err != nil {
@@ -305,24 +293,20 @@ func (s *OrdersService) CancelOrder(ctx context.Context, id string) error {
 	return nil
 }
 
-// Search busca órdenes usando Solr
 func (s *OrdersService) Search(ctx context.Context, query string, filters map[string]string) ([]domain.Orden, error) {
 	return s.repository.Search(ctx, query, filters)
 }
 
-// ReindexAll re-indexa todas las órdenes en Solr publicando eventos para cada una
 func (s *OrdersService) ReindexAll(ctx context.Context) (int, error) {
-	// Obtener todas las órdenes
 	result, err := s.repository.List(ctx, domain.OrderFilters{
 		Page:  1,
-		Limit: 1000, // Ajustar según necesidad
+		Limit: 1000,
 	})
 	if err != nil {
 		return 0, fmt.Errorf("error listando órdenes: %w", err)
 	}
 
 	count := 0
-	// Publicar evento para cada orden
 	for _, orden := range result.Results {
 		if err := s.eventPublisher.Publish(ctx, "order_created", orden.ID); err != nil {
 			log.Printf("Error publicando evento de re-indexación para orden %s: %v", orden.ID, err)

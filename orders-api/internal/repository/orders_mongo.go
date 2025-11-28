@@ -4,34 +4,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"orders-api/internal/dao"
 	"orders-api/internal/domain"
 	"time"
-)
 
-//Archivo: internal/repository/orders_mongo.go
-//
-//Qué debe hacer:
-//- Conectarse a MongoDB usando el driver oficial go.mongodb.org/mongo-driver
-//- Implementar métodos:
-//- Create(orden *domain.Orden) error
-//- GetByID(id string) (*domain.Orden, error)
-//- List(filters) ([]domain.Orden, error) - filtrar por negocio, sucursal, estado, usuario
-//- Update(id string, orden *domain.Orden) error
-//- UpdateStatus(id string, nuevoEstado string) error
-//- Delete(id string) error (si es necesario)
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
 
 type MongoOrdersRepository struct {
 	col        *mongo.Collection
 	solrClient SolrSearchClient
 }
 
-// SolrSearchClient define la interfaz para búsqueda en Solr
 type SolrSearchClient interface {
 	Search(query string, filters map[string]string) ([]string, error)
 	Index(orden domain.Orden) error
@@ -91,13 +79,11 @@ func (r *MongoOrdersRepository) Create(ctx context.Context, orden domain.Orden) 
 		ordersDAO.Estado = "pendiente"
 	}
 
-	// Insertar en MongoDB
 	res, err := r.col.InsertOne(ctx, ordersDAO)
 	if err != nil {
 		return domain.Orden{}, err
 	}
 
-	// Verificar que se insertó correctamente y obtener el ID
 	if oid, ok := res.InsertedID.(primitive.ObjectID); ok {
 		ordersDAO.ID = oid
 	} else {
@@ -105,9 +91,6 @@ func (r *MongoOrdersRepository) Create(ctx context.Context, orden domain.Orden) 
 	}
 
 	created := ordersDAO.ToDomain()
-
-	// La indexación en Solr se hace a través de eventos de RabbitMQ
-	// El consumer escucha los eventos y actualiza Solr automáticamente
 
 	return created, nil
 
@@ -140,13 +123,11 @@ func (r *MongoOrdersRepository) List(ctx context.Context, filters domain.OrderFi
 	}
 	skip := int64((page - 1) * limit)
 
-	// Contar total de documentos que coinciden con los filtros
 	total, err := r.col.CountDocuments(ctx, filterset)
 	if err != nil {
 		return domain.PaginatedOrdenResponse{}, err
 	}
 
-	// Buscar con paginación
 	opts := options.Find().SetSkip(skip).SetLimit(int64(limit)).SetSort(bson.D{{Key: "created_at", Value: -1}})
 	cursor, err := r.col.Find(ctx, filterset, opts)
 	if err != nil {
@@ -167,7 +148,6 @@ func (r *MongoOrdersRepository) List(ctx context.Context, filters domain.OrderFi
 		return domain.PaginatedOrdenResponse{}, err
 	}
 
-	// Retornar estructura paginada
 	return domain.PaginatedOrdenResponse{
 		Page:    page,
 		Limit:   limit,
@@ -182,12 +162,10 @@ func (r *MongoOrdersRepository) Update(ctx context.Context, id string, orden dom
 		return domain.Orden{}, errors.New("invalid ObjectID format")
 	}
 
-	// Convertir a DAO
 	ordersDAO := dao.FromDomain(orden)
 	ordersDAO.ID = objectID
 	ordersDAO.UpdatedAt = time.Now().UTC()
 
-	// Construir update
 	update := bson.M{
 		"$set": bson.M{
 			"items":         ordersDAO.Items,
@@ -198,7 +176,6 @@ func (r *MongoOrdersRepository) Update(ctx context.Context, id string, orden dom
 		},
 	}
 
-	// Ejecutar update en MongoDB
 	filter := bson.M{"_id": objectID}
 	result := r.col.FindOneAndUpdate(
 		ctx,
@@ -222,7 +199,6 @@ func (r *MongoOrdersRepository) Update(ctx context.Context, id string, orden dom
 	return updatedDAO.ToDomain(), nil
 }
 
-// UpdateStatus actualiza solo el estado de una orden
 func (r *MongoOrdersRepository) UpdateStatus(ctx context.Context, id string, nuevoEstado string) (domain.Orden, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -231,7 +207,7 @@ func (r *MongoOrdersRepository) UpdateStatus(ctx context.Context, id string, nue
 	if !domain.ValidarEstado(nuevoEstado) {
 		return domain.Orden{}, fmt.Errorf("estado inválido: %s", nuevoEstado)
 	}
-	// Construir update solo del estado
+
 	update := bson.M{
 		"$set": bson.M{
 			"estado":     nuevoEstado,
@@ -239,7 +215,6 @@ func (r *MongoOrdersRepository) UpdateStatus(ctx context.Context, id string, nue
 		},
 	}
 
-	// Ejecutar update
 	filter := bson.M{"_id": objectID}
 	result := r.col.FindOneAndUpdate(
 		ctx,
@@ -262,9 +237,6 @@ func (r *MongoOrdersRepository) UpdateStatus(ctx context.Context, id string, nue
 
 	updated := updatedDAO.ToDomain()
 
-	// La actualización en Solr se hace a través de eventos de RabbitMQ
-	// El consumer escucha los eventos y actualiza Solr automáticamente
-
 	return updated, nil
 }
 
@@ -274,7 +246,6 @@ func (r *MongoOrdersRepository) Delete(ctx context.Context, id string) error {
 		return errors.New("invalid ObjectID format")
 	}
 
-	// En vez de eliminar, cambiar estado a "cancelado"
 	update := bson.M{
 		"$set": bson.M{
 			"estado":     "cancelado",
@@ -292,13 +263,9 @@ func (r *MongoOrdersRepository) Delete(ctx context.Context, id string) error {
 		return errors.New("orden no encontrada")
 	}
 
-	// La eliminación de Solr se hace a través de eventos de RabbitMQ
-	// El consumer escucha los eventos y actualiza Solr automáticamente
-
 	return nil
 }
 
-// FindByID es un wrapper de GetByID que retorna un puntero
 func (r *MongoOrdersRepository) FindByID(ctx context.Context, id string) (*domain.Orden, error) {
 	orden, err := r.GetByID(ctx, id)
 	if err != nil {
@@ -307,7 +274,6 @@ func (r *MongoOrdersRepository) FindByID(ctx context.Context, id string) (*domai
 	return &orden, nil
 }
 
-// UpdateOrden actualiza una orden completa
 func (r *MongoOrdersRepository) UpdateOrden(ctx context.Context, orden *domain.Orden) error {
 	objectID, err := primitive.ObjectIDFromHex(orden.ID)
 	if err != nil {
@@ -330,13 +296,11 @@ func (r *MongoOrdersRepository) UpdateOrden(ctx context.Context, orden *domain.O
 	return nil
 }
 
-// Search busca órdenes usando Solr y retorna los detalles completos desde MongoDB
 func (r *MongoOrdersRepository) Search(ctx context.Context, query string, filters map[string]string) ([]domain.Orden, error) {
 	if r.solrClient == nil {
 		return nil, errors.New("solr client not configured")
 	}
 
-	// Buscar IDs en Solr
 	ids, err := r.solrClient.Search(query, filters)
 	if err != nil {
 		return nil, fmt.Errorf("error buscando en Solr: %w", err)
@@ -346,7 +310,6 @@ func (r *MongoOrdersRepository) Search(ctx context.Context, query string, filter
 		return []domain.Orden{}, nil
 	}
 
-	// Convertir IDs string a ObjectID
 	objectIDs := make([]primitive.ObjectID, 0, len(ids))
 	for _, id := range ids {
 		objectID, err := primitive.ObjectIDFromHex(id)
@@ -357,7 +320,6 @@ func (r *MongoOrdersRepository) Search(ctx context.Context, query string, filter
 		objectIDs = append(objectIDs, objectID)
 	}
 
-	// Buscar en MongoDB
 	filter := bson.M{"_id": bson.M{"$in": objectIDs}}
 	cursor, err := r.col.Find(ctx, filter)
 	if err != nil {

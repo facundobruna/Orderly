@@ -24,18 +24,16 @@ func NewGroupOrderService(
 	}
 }
 
-// CreateGroupOrder crea una orden grupal a partir de una orden existente
 func (s *GroupOrderService) CreateGroupOrder(
 	ctx context.Context,
 	req *domain.CreateGroupOrderRequest,
 ) (*domain.GroupOrder, error) {
-	// Verificar que la orden original existe
+
 	orden, err := s.orderRepo.FindByID(ctx, req.OrdenID)
 	if err != nil {
 		return nil, fmt.Errorf("orden not found: %w", err)
 	}
 
-	// Verificar que no exista ya una orden grupal para esta orden
 	existingGroup, err := s.groupOrderRepo.FindByOrdenID(ctx, req.OrdenID)
 	if err != nil {
 		return nil, err
@@ -44,10 +42,8 @@ func (s *GroupOrderService) CreateGroupOrder(
 		return nil, fmt.Errorf("group order already exists for this orden")
 	}
 
-	// Calcular monto por persona
 	montoPorPersona := orden.Total / float64(req.Divisiones)
 
-	// Crear sub-órdenes
 	subOrdenes := make([]domain.SubOrder, req.Divisiones)
 	for i := 0; i < req.Divisiones; i++ {
 		personaID := uuid.New().String()
@@ -56,10 +52,9 @@ func (s *GroupOrderService) CreateGroupOrder(
 			nombre = req.NombresPersonas[i]
 		}
 
-		// Ajustar el último monto para compensar decimales
 		monto := montoPorPersona
 		if i == req.Divisiones-1 {
-			// Calcular el monto restante para evitar errores de redondeo
+
 			totalPagado := montoPorPersona * float64(req.Divisiones-1)
 			monto = orden.Total - totalPagado
 		}
@@ -73,7 +68,6 @@ func (s *GroupOrderService) CreateGroupOrder(
 		}
 	}
 
-	// Crear la orden grupal
 	groupOrder := &domain.GroupOrder{
 		OrdenOriginalID: req.OrdenID,
 		Total:           orden.Total,
@@ -89,12 +83,10 @@ func (s *GroupOrderService) CreateGroupOrder(
 	return groupOrder, nil
 }
 
-// GetGroupOrder obtiene una orden grupal por ID
 func (s *GroupOrderService) GetGroupOrder(ctx context.Context, id string) (*domain.GroupOrder, error) {
 	return s.groupOrderRepo.FindByID(ctx, id)
 }
 
-// UpdateSubOrderPayment actualiza el estado de pago de una sub-orden
 func (s *GroupOrderService) UpdateSubOrderPayment(
 	ctx context.Context,
 	groupOrderID string,
@@ -106,7 +98,6 @@ func (s *GroupOrderService) UpdateSubOrderPayment(
 		return nil, err
 	}
 
-	// Encontrar la sub-orden
 	var subOrden *domain.SubOrder
 	for i := range groupOrder.SubOrdenes {
 		if groupOrder.SubOrdenes[i].PersonaID == personaID {
@@ -119,15 +110,13 @@ func (s *GroupOrderService) UpdateSubOrderPayment(
 		return nil, fmt.Errorf("sub-orden not found for persona %s", personaID)
 	}
 
-	// Actualizar el pago
 	subOrden.Estado = domain.SubOrderStatusPaid
 	subOrden.Pago = &domain.Pago{
-		Metodo: "mercadopago", // Determinar según el tipo de pago
+		Metodo: "mercadopago",
 		Monto:  subOrden.Monto,
 		Pagado: true,
 	}
 
-	// Verificar si todas las sub-órdenes están pagadas
 	todasPagadas := true
 	for _, so := range groupOrder.SubOrdenes {
 		if so.Estado != domain.SubOrderStatusPaid {
@@ -138,7 +127,6 @@ func (s *GroupOrderService) UpdateSubOrderPayment(
 
 	groupOrder.Completado = todasPagadas
 
-	// Si todas están pagadas, actualizar la orden original
 	if todasPagadas {
 		orden, err := s.orderRepo.FindByID(ctx, groupOrder.OrdenOriginalID)
 		if err != nil {
@@ -151,7 +139,6 @@ func (s *GroupOrderService) UpdateSubOrderPayment(
 		}
 	}
 
-	// Guardar cambios
 	if err := s.groupOrderRepo.Update(ctx, groupOrder); err != nil {
 		return nil, err
 	}

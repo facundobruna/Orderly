@@ -38,7 +38,7 @@ func main() {
 	productosQueue := clients.NewRabbitMQClient(
 		cfg.RabbitMQ.Username,
 		cfg.RabbitMQ.Password,
-		"productos-events", // Nombre de la cola
+		"productos-events",
 		cfg.RabbitMQ.Host,
 		cfg.RabbitMQ.Port,
 	)

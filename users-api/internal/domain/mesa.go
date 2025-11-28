@@ -10,7 +10,7 @@ type Mesa struct {
 	QRCode     string    `gorm:"column:qr_code;not null;unique"`
 	Activo     bool      `gorm:"column:activo;default:true"`
 	CreadoEn   time.Time `gorm:"column:creado_en;autoCreateTime"`
-	Negocio    *Negocio  `gorm:"-" json:"-"` // Ignored by GORM to avoid migration issues
+	Negocio    *Negocio  `gorm:"-" json:"-"`
 }
 
 type CreateMesaRequest struct {

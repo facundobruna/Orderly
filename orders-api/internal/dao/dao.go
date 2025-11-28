@@ -1,9 +1,10 @@
 package dao
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"orders-api/internal/domain"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Variante struct {
@@ -80,7 +81,6 @@ func (o Orden) ToDomain() domain.Orden {
 		}
 	}
 
-	// Convertir pago (si existe)
 	var pago *domain.Pago
 	if o.Pago != nil {
 		pago = &domain.Pago{
@@ -107,14 +107,12 @@ func (o Orden) ToDomain() domain.Orden {
 	}
 }
 
-// FromDomain convierte de Domain a DAO
 func FromDomain(orden domain.Orden) Orden {
 	var objectID primitive.ObjectID
 	if orden.ID != "" {
 		objectID, _ = primitive.ObjectIDFromHex(orden.ID)
 	}
 
-	// Convertir items
 	items := make([]ItemOrden, len(orden.Items))
 	for i, item := range orden.Items {
 		var variante *Variante
@@ -144,7 +142,6 @@ func FromDomain(orden domain.Orden) Orden {
 		}
 	}
 
-	// Convertir pago (si existe)
 	var pago *Pago
 	if orden.Pago != nil {
 		pago = &Pago{

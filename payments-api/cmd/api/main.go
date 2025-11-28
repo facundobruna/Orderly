@@ -11,31 +11,24 @@ import (
 )
 
 func main() {
-	// Cargar configuración
 	cfg := config.LoadConfig()
 
-	// Inicializar servicios
 	mpService := services.NewMercadoPagoService(cfg.MercadoPagoAccessToken)
 	paymentService := services.NewPaymentService(mpService)
 
-	// Inicializar controllers
 	paymentController := controllers.NewPaymentController(paymentService)
 
-	// Configurar Gin
 	if cfg.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	router := gin.Default()
 
-	// Middleware
 	router.Use(middleware.CORSMiddleware())
 
-	// Health check
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "payments-api"})
 	})
 
-	// Rutas públicas
 	public := router.Group("/payments")
 	{
 		// Mercado Pago
@@ -48,7 +41,6 @@ func main() {
 		public.POST("/transfer/confirm", paymentController.ConfirmTransferPayment)
 	}
 
-	// Iniciar servidor
 	port := cfg.Port
 	log.Printf("🚀 Payments API running on port %s", port)
 	if err := router.Run(":" + port); err != nil {

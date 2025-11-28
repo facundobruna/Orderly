@@ -2,7 +2,6 @@ package domain
 
 import "time"
 
-// Variante representa una opción de variación del producto
 type Variante struct {
 	Nombre          string  `json:"nombre"`
 	PrecioAdicional float64 `json:"precio_adicional"`
@@ -33,7 +32,6 @@ type Producto struct {
 	UpdatedAt     time.Time     `json:"updated_at"`
 }
 
-// CreateProductoRequest es el request para crear un producto
 type CreateProductoRequest struct {
 	NegocioID     string        `json:"negocio_id" binding:"required"`
 	SucursalID    string        `json:"sucursal_id" binding:"required"`
@@ -48,7 +46,6 @@ type CreateProductoRequest struct {
 	Tags          []string      `json:"tags"`
 }
 
-// UpdateProductoRequest es el request para actualizar un producto
 type UpdateProductoRequest struct {
 	Nombre        *string        `json:"nombre"`
 	Descripcion   *string        `json:"descripcion"`
@@ -61,7 +58,6 @@ type UpdateProductoRequest struct {
 	Tags          *[]string      `json:"tags"`
 }
 
-// SearchFilters para búsqueda de productos
 type SearchFilters struct {
 	NegocioID  string   `json:"negocio_id"`
 	SucursalID string   `json:"sucursal_id"`
@@ -73,7 +69,6 @@ type SearchFilters struct {
 	Limit      int      `json:"limit"`
 }
 
-// PaginatedResponse para respuestas paginadas
 type PaginatedResponse struct {
 	Page    int        `json:"page"`
 	Limit   int        `json:"limit"`

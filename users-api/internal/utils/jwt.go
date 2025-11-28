@@ -8,7 +8,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Claims estructura personalizada para el JWT
 type Claims struct {
 	UserID   uint64 `json:"user_id"`
 	Username string `json:"username"`
@@ -24,9 +23,8 @@ func getJWTSecret() []byte {
 	return []byte(secret)
 }
 
-// GenerateToken genera un nuevo JWT token
 func GenerateToken(userID uint64, username string, rol string) (string, error) {
-	// Configurar claims
+
 	claims := Claims{
 		UserID:   userID,
 		Username: username,
@@ -38,10 +36,8 @@ func GenerateToken(userID uint64, username string, rol string) (string, error) {
 		},
 	}
 
-	// Crear token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	// Firmar token
 	tokenString, err := token.SignedString(getJWTSecret())
 	if err != nil {
 		return "", err
@@ -50,9 +46,8 @@ func GenerateToken(userID uint64, username string, rol string) (string, error) {
 	return tokenString, nil
 }
 
-// ValidateToken valida y parsea un JWT token
 func ValidateToken(tokenString string) (*Claims, error) {
-	// Parsear token
+
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		// Verificar que el método de firma sea HMAC
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

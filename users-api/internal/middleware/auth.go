@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AuthMiddleware valida el JWT token y extrae los claims
 func AuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
@@ -49,7 +48,6 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-// GetUserIDFromContext extrae el userID del contexto
 func GetUserIDFromContext(ctx *gin.Context) (uint64, bool) {
 	userID, exists := ctx.Get("user_id")
 	if !exists {
@@ -60,7 +58,6 @@ func GetUserIDFromContext(ctx *gin.Context) (uint64, bool) {
 	return id, ok
 }
 
-// GetRolFromContext extrae el rol del contexto
 func GetRolFromContext(ctx *gin.Context) (string, bool) {
 	rol, exists := ctx.Get("rol")
 	if !exists {
@@ -71,7 +68,6 @@ func GetRolFromContext(ctx *gin.Context) (string, bool) {
 	return rolStr, ok
 }
 
-// RequireRole middleware que verifica que el usuario tenga un rol específico
 func RequireRole(requiredRole string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		rol, exists := GetRolFromContext(ctx)

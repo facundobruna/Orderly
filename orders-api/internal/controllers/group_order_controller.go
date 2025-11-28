@@ -18,17 +18,6 @@ func NewGroupOrderController(groupOrderService *services.GroupOrderService) *Gro
 	}
 }
 
-// CreateGroupOrder godoc
-// @Summary Create a group order
-// @Description Create a group order for splitting payment among multiple people
-// @Tags group_orders
-// @Accept json
-// @Produce json
-// @Param request body domain.CreateGroupOrderRequest true "Group Order Request"
-// @Success 201 {object} domain.GroupOrder
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /orders/group [post]
 func (c *GroupOrderController) CreateGroupOrder(ctx *gin.Context) {
 	var req domain.CreateGroupOrderRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -45,17 +34,6 @@ func (c *GroupOrderController) CreateGroupOrder(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, groupOrder)
 }
 
-// GetGroupOrder godoc
-// @Summary Get a group order
-// @Description Get a group order by ID
-// @Tags group_orders
-// @Accept json
-// @Produce json
-// @Param id path string true "Group Order ID"
-// @Success 200 {object} domain.GroupOrder
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /orders/group/{id} [get]
 func (c *GroupOrderController) GetGroupOrder(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -68,20 +46,6 @@ func (c *GroupOrderController) GetGroupOrder(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, groupOrder)
 }
 
-// UpdateSubOrderPayment godoc
-// @Summary Update sub-order payment
-// @Description Update the payment status of a specific person in a group order
-// @Tags group_orders
-// @Accept json
-// @Produce json
-// @Param id path string true "Group Order ID"
-// @Param persona_id path string true "Person ID"
-// @Param request body domain.UpdateGroupOrderPaymentRequest true "Payment Request"
-// @Success 200 {object} domain.GroupOrder
-// @Failure 400 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /orders/group/{id}/payment/{persona_id} [put]
 func (c *GroupOrderController) UpdateSubOrderPayment(ctx *gin.Context) {
 	id := ctx.Param("id")
 	personaID := ctx.Param("persona_id")

@@ -25,19 +25,16 @@ func NewNegociosRepository(db *gorm.DB) *NegociosRepository {
 	return &NegociosRepository{db: db}
 }
 
-// NewMySQLUsersRepository crea una nueva instancia del repository
 func NewMySQLUsersRepository(ctx context.Context, user, password, host, port, dbName string) *MySQLUsersRepository {
-	// Construir DSN (Data Source Name)
+
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4&loc=Local",
 		user, password, host, port, dbName)
 
-	// Conectar a MySQL
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Error conectando a MySQL: %v", err)
 	}
 
-	// Configurar pool de conexiones
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Fatalf("Error obteniendo DB: %v", err)
@@ -51,8 +48,6 @@ func NewMySQLUsersRepository(ctx context.Context, user, password, host, port, db
 		log.Fatalf("Error en auto-migrate: %v", err)
 	}
 
-	// Crear foreign key constraint manualmente para mesas -> negocios
-	// Esto es necesario porque el campo Negocio está marcado con gorm:"-"
 	if db.Migrator().HasTable(&domain.Mesa{}) {
 		if !db.Migrator().HasConstraint(&domain.Mesa{}, "fk_mesas_negocio") {
 			err := db.Exec(`
@@ -75,7 +70,6 @@ func NewMySQLUsersRepository(ctx context.Context, user, password, host, port, db
 	return &MySQLUsersRepository{db: db}
 }
 
-// CreateUser crea un nuevo usuario
 func (r *MySQLUsersRepository) CreateUser(ctx context.Context, user dao.Usuario) (dao.Usuario, error) {
 	result := r.db.WithContext(ctx).Create(&user)
 	if result.Error != nil {
@@ -84,7 +78,6 @@ func (r *MySQLUsersRepository) CreateUser(ctx context.Context, user dao.Usuario)
 	return user, nil
 }
 
-// GetUserByUsername busca un usuario por username
 func (r *MySQLUsersRepository) GetUserByUsername(ctx context.Context, username string) (dao.Usuario, error) {
 	var user dao.Usuario
 	result := r.db.WithContext(ctx).Where("username = ?", username).First(&user)
@@ -97,7 +90,6 @@ func (r *MySQLUsersRepository) GetUserByUsername(ctx context.Context, username s
 	return user, nil
 }
 
-// GetUserByEmail busca un usuario por email
 func (r *MySQLUsersRepository) GetUserByEmail(ctx context.Context, email string) (dao.Usuario, error) {
 	var user dao.Usuario
 	result := r.db.WithContext(ctx).Where("email = ?", email).First(&user)
@@ -110,7 +102,6 @@ func (r *MySQLUsersRepository) GetUserByEmail(ctx context.Context, email string)
 	return user, nil
 }
 
-// GetUserByID busca un usuario por ID
 func (r *MySQLUsersRepository) GetUserByID(ctx context.Context, id uint64) (dao.Usuario, error) {
 	var user dao.Usuario
 	result := r.db.WithContext(ctx).First(&user, id)
@@ -123,7 +114,6 @@ func (r *MySQLUsersRepository) GetUserByID(ctx context.Context, id uint64) (dao.
 	return user, nil
 }
 
-// CheckUsernameExists verifica si un username ya está en uso
 func (r *MySQLUsersRepository) CheckUsernameExists(ctx context.Context, username string) (bool, error) {
 	var count int64
 	result := r.db.WithContext(ctx).Model(&dao.Usuario{}).Where("username = ?", username).Count(&count)
@@ -133,7 +123,6 @@ func (r *MySQLUsersRepository) CheckUsernameExists(ctx context.Context, username
 	return count > 0, nil
 }
 
-// CheckEmailExists verifica si un email ya está en uso
 func (r *MySQLUsersRepository) CheckEmailExists(ctx context.Context, email string) (bool, error) {
 	var count int64
 	result := r.db.WithContext(ctx).Model(&dao.Usuario{}).Where("email = ?", email).Count(&count)
@@ -143,7 +132,6 @@ func (r *MySQLUsersRepository) CheckEmailExists(ctx context.Context, email strin
 	return count > 0, nil
 }
 
-// GetDB retorna la instancia de la base de datos
 func (r *MySQLUsersRepository) GetDB() *gorm.DB {
 	return r.db
 }
@@ -177,7 +165,6 @@ func (r *NegociosRepository) ListAllNegocios(ctx context.Context) ([]dao.Negocio
 func (r *NegociosRepository) UpdateNegocio(ctx context.Context, id uint64, updates map[string]interface{}) (dao.Negocio, error) {
 	var negocio dao.Negocio
 
-	// Buscar el negocio
 	result := r.db.WithContext(ctx).First(&negocio, id)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -186,7 +173,6 @@ func (r *NegociosRepository) UpdateNegocio(ctx context.Context, id uint64, updat
 		return dao.Negocio{}, result.Error
 	}
 
-	// Actualizar campos
 	result = r.db.WithContext(ctx).Model(&negocio).Updates(updates)
 	if result.Error != nil {
 		return dao.Negocio{}, result.Error
@@ -224,7 +210,6 @@ func (r *NegociosRepository) CheckNegocioBelongsToUser(ctx context.Context, nego
 	return count > 0, nil
 }
 
-// Createnegocio crea un nuevo negocio
 func (r *NegociosRepository) Createnegocio(ctx context.Context, negocio dao.Negocio) (dao.Negocio, error) {
 	result := r.db.WithContext(ctx).Create(&negocio)
 	if result.Error != nil {
@@ -233,7 +218,6 @@ func (r *NegociosRepository) Createnegocio(ctx context.Context, negocio dao.Nego
 	return negocio, nil
 }
 
-// GetnegocioByID busca un negocio por ID
 func (r *NegociosRepository) GetnegocioByID(ctx context.Context, id uint64) (dao.Negocio, error) {
 	var negocio dao.Negocio
 	result := r.db.WithContext(ctx).First(&negocio, id)

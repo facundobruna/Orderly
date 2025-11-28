@@ -28,7 +28,7 @@ export default function LoginPage() {
   const { success } = useToast();
   const { handleError } = useApiError({
     context: "LoginPage",
-    preventRedirect: true // Prevent redirect since we're already on login
+    preventRedirect: true
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -48,7 +48,6 @@ export default function LoginPage() {
       setAuth(response.user, response.token);
       success(`Bienvenido de vuelta, ${response.user.nombre}!`, "Inicio de sesión exitoso");
 
-      // Redirect based on user role
       if (response.user.rol === "dueno") {
         router.push("/admin");
       } else {

@@ -2,24 +2,22 @@ package dao
 
 import (
 	"products-api/internal/domain"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Variante representa una opción de variación del producto (ej: tamaño)
 type Variante struct {
 	Nombre          string  `bson:"nombre" json:"nombre"`
 	PrecioAdicional float64 `bson:"precio_adicional" json:"precio_adicional"`
 }
 
-// Modificador representa opciones adicionales del producto (ej: extra queso)
 type Modificador struct {
 	Nombre          string  `bson:"nombre" json:"nombre"`
 	PrecioAdicional float64 `bson:"precio_adicional" json:"precio_adicional"`
 	EsObligatorio   bool    `bson:"es_obligatorio" json:"es_obligatorio"`
 }
 
-// Producto es el modelo de base de datos
 type Producto struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	NegocioID     string             `bson:"negocio_id" json:"negocio_id"`
@@ -37,9 +35,7 @@ type Producto struct {
 	UpdatedAt     time.Time          `bson:"updated_at" json:"updated_at"`
 }
 
-// ToDomain convierte de DAO a Domain
 func (p Producto) ToDomain() domain.Producto {
-	// Convertir variantes
 	variantes := make([]domain.Variante, len(p.Variantes))
 	for i, v := range p.Variantes {
 		variantes[i] = domain.Variante{
@@ -48,7 +44,6 @@ func (p Producto) ToDomain() domain.Producto {
 		}
 	}
 
-	// Convertir modificadores
 	modificadores := make([]domain.Modificador, len(p.Modificadores))
 	for i, m := range p.Modificadores {
 		modificadores[i] = domain.Modificador{
@@ -76,14 +71,12 @@ func (p Producto) ToDomain() domain.Producto {
 	}
 }
 
-// FromDomain convierte de Domain a DAO
 func FromDomain(p domain.Producto) Producto {
 	var objectID primitive.ObjectID
 	if p.ID != "" {
 		objectID, _ = primitive.ObjectIDFromHex(p.ID)
 	}
 
-	// Convertir variantes
 	variantes := make([]Variante, len(p.Variantes))
 	for i, v := range p.Variantes {
 		variantes[i] = Variante{
@@ -92,7 +85,6 @@ func FromDomain(p domain.Producto) Producto {
 		}
 	}
 
-	// Convertir modificadores
 	modificadores := make([]Modificador, len(p.Modificadores))
 	for i, m := range p.Modificadores {
 		modificadores[i] = Modificador{

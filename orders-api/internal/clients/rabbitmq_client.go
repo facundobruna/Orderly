@@ -72,13 +72,12 @@ func (r *RabbitMQClient) connect() error {
 }
 
 func (r *RabbitMQClient) ensureConnection() error {
-	// Si la conexión está cerrada, reconectar
+
 	if r.connection == nil || r.connection.IsClosed() {
-		log.Println("⚠️  RabbitMQ connection is closed, reconnecting...")
+		log.Println("RabbitMQ connection is closed, reconnecting...")
 		return r.connect()
 	}
 
-	// Si el canal está cerrado, crear uno nuevo
 	if r.channel == nil || r.channel.IsClosed() {
 		log.Println("RabbitMQ channel is closed, reopening...")
 		channel, err := r.connection.Channel()
@@ -93,7 +92,7 @@ func (r *RabbitMQClient) ensureConnection() error {
 }
 
 func (r *RabbitMQClient) Publish(ctx context.Context, action string, orderID string) error {
-	// Asegurar que la conexión esté activa
+
 	if err := r.ensureConnection(); err != nil {
 		return fmt.Errorf("failed to ensure RabbitMQ connection: %w", err)
 	}
@@ -122,7 +121,6 @@ func (r *RabbitMQClient) Publish(ctx context.Context, action string, orderID str
 	return nil
 }
 
-// OrderEvent representa un evento de orden
 type OrderEvent struct {
 	Action  string `json:"action"`
 	OrderID string `json:"order_id"`
@@ -131,21 +129,19 @@ type OrderEvent struct {
 func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Context, OrderEvent) error) error {
 	// Configurar el consumer
 	msgs, err := r.channel.Consume(
-		r.queue.Name, // queue
-		"",           // consumer
-		true,         // auto-ack
-		false,        // exclusive
-		false,        // no-local
-		false,        // no-wait
-		nil,          // args
+		r.queue.Name,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to register consumer: %w", err)
 	}
 
 	log.Printf("Consumer registered for queue: %s", r.queue.Name)
-
-	// Loop infinito para consumir mensajes
 	for {
 		select {
 		case <-ctx.Done():
@@ -153,14 +149,13 @@ func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Conte
 			return ctx.Err()
 
 		case msg := <-msgs:
-			// Deserializar mensaje
+
 			var event OrderEvent
 			if err := json.Unmarshal(msg.Body, &event); err != nil {
 				log.Printf("Error unmarshalling message: %v", err)
 				continue
 			}
 
-			// Procesar mensaje
 			if err := handler(ctx, event); err != nil {
 				log.Printf("Error handling message: %v", err)
 			}

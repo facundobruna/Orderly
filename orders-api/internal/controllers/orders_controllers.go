@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// OrdersService define la lógica de negocio
 type OrdersService interface {
 	CreateOrder(ctx context.Context, req domain.CreateOrdenRequest) (domain.Orden, error)
 	GetByID(ctx context.Context, id string) (domain.Orden, error)
@@ -21,19 +20,16 @@ type OrdersService interface {
 	ReindexAll(ctx context.Context) (int, error)
 }
 
-// OrdersController maneja peticiones HTTP de órdenes
 type OrdersController struct {
 	service OrdersService
 }
 
-// NewOrdersController crea una nueva instancia
 func NewOrdersController(service OrdersService) *OrdersController {
 	return &OrdersController{
 		service: service,
 	}
 }
 
-// Create maneja POST /orders
 func (c *OrdersController) Create(ctx *gin.Context) {
 	var req domain.CreateOrdenRequest
 
@@ -70,7 +66,6 @@ func (c *OrdersController) Create(ctx *gin.Context) {
 	})
 }
 
-// GetByID maneja GET /orders/:id
 func (c *OrdersController) GetByID(ctx *gin.Context) {
 	id := ctx.Param("id")
 	orden, err := c.service.GetByID(ctx.Request.Context(), id)
@@ -91,7 +86,6 @@ func (c *OrdersController) GetByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, orden)
 }
 
-// List maneja GET /orders
 func (c *OrdersController) List(ctx *gin.Context) {
 	filters := domain.OrderFilters{
 		NegocioID:  ctx.Query("negocio_id"),
@@ -118,7 +112,6 @@ func (c *OrdersController) List(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-// UpdateStatus maneja PUT /orders/:id/status
 func (c *OrdersController) UpdateStatus(ctx *gin.Context) {
 	id := ctx.Param("id")
 	var req domain.UpdateEstadoRequest
@@ -177,7 +170,6 @@ func (c *OrdersController) Cancel(ctx *gin.Context) {
 	})
 }
 
-// isValidationError verifica si es un error de validación
 func isValidationError(err error) bool {
 	errMsg := err.Error()
 	return strings.Contains(errMsg, "requerido") ||
@@ -187,14 +179,12 @@ func isValidationError(err error) bool {
 		strings.Contains(errMsg, "transición")
 }
 
-// isNotFoundError verifica si es un error de recurso no encontrado
 func isNotFoundError(err error) bool {
 	errMsg := err.Error()
 	return strings.Contains(errMsg, "no encontrad") ||
 		strings.Contains(errMsg, "no existe")
 }
 
-// Search maneja GET /orders/search
 func (c *OrdersController) Search(ctx *gin.Context) {
 	query := ctx.Query("q")
 	if query == "" {
@@ -204,7 +194,6 @@ func (c *OrdersController) Search(ctx *gin.Context) {
 		return
 	}
 
-	// Construir filtros opcionales
 	filters := make(map[string]string)
 	if negocioID := ctx.Query("negocio_id"); negocioID != "" {
 		filters["negocio_id"] = negocioID
@@ -231,7 +220,6 @@ func (c *OrdersController) Search(ctx *gin.Context) {
 	})
 }
 
-// Reindex maneja POST /orders/reindex (re-indexa todas las órdenes en Solr)
 func (c *OrdersController) Reindex(ctx *gin.Context) {
 	count, err := c.service.ReindexAll(ctx.Request.Context())
 	if err != nil {

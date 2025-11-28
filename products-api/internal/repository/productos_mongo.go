@@ -16,15 +16,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// MongoProductosRepository implementa el repositorio de productos con MongoDB
 type MongoProductosRepository struct {
 	col   *mongo.Collection
 	cache *clients.MemcachedClient
 	solr  *clients.SolrClient
 }
 
-// NewMongoProductosRepository crea una nueva instancia del repository
-// cache puede ser nil si no se quiere usar caché
 func NewMongoProductosRepository(ctx context.Context, uri, dbName, collectionName string, cache *clients.MemcachedClient, solr *clients.SolrClient) *MongoProductosRepository {
 	opt := options.Client().ApplyURI(uri)
 	opt.SetServerSelectionTimeout(10 * time.Second)
@@ -47,7 +44,7 @@ func NewMongoProductosRepository(ctx context.Context, uri, dbName, collectionNam
 	if cache != nil {
 		if err := cache.Ping(); err != nil {
 			log.Printf("Advertencia: Memcached no está disponible: %v", err)
-			cache = nil // Desactivar caché si no está disponible
+			cache = nil
 		} else {
 			log.Println("✓ Conexión exitosa a Memcached")
 		}
@@ -72,17 +69,13 @@ func (r *MongoProductosRepository) HasSolr() bool {
 	return r.solr != nil
 }
 
-// SearchWithSolr busca productos usando Solr
 func (r *MongoProductosRepository) SearchWithSolr(ctx context.Context, query string, filters map[string]string) ([]domain.Producto, error) {
 	if r.solr == nil {
 		return nil, errors.New("Solr no está disponible")
 	}
-
-	// Llamar al método de búsqueda de Solr
 	return r.solr.Search(query, filters)
 }
 
-// Create inserta un nuevo producto
 func (r *MongoProductosRepository) Create(ctx context.Context, producto domain.Producto) (domain.Producto, error) {
 	productoDAO := dao.FromDomain(producto)
 	productoDAO.ID = primitive.NewObjectID()
@@ -107,7 +100,6 @@ func (r *MongoProductosRepository) Create(ctx context.Context, producto domain.P
 	return created, nil
 }
 
-// GetByID busca un producto por su ID
 func (r *MongoProductosRepository) GetByID(ctx context.Context, id string) (domain.Producto, error) {
 	if r.cache != nil {
 		cachekey := clients.BuildKey("producto", id)
@@ -149,9 +141,7 @@ func (r *MongoProductosRepository) GetByID(ctx context.Context, id string) (doma
 	return productoDAO.ToDomain(), nil
 }
 
-// List retorna productos con filtros y paginación
 func (r *MongoProductosRepository) List(ctx context.Context, filters domain.SearchFilters) (domain.PaginatedResponse, error) {
-	// Construir filtro de búsqueda
 	filter := bson.M{}
 
 	if filters.NegocioID != "" {
@@ -228,18 +218,12 @@ func (r *MongoProductosRepository) List(ctx context.Context, filters domain.Sear
 	}, nil
 }
 
-// Update actualiza un producto existente
-//
-// PATRÓN DE CACHÉ: Write-Through + Invalidación
-// 1. Actualizar en MongoDB (fuente de verdad)
-// 2. Invalidar la caché para que la próxima lectura obtenga el valor actualizado
 func (r *MongoProductosRepository) Update(ctx context.Context, id string, req domain.UpdateProductoRequest) (domain.Producto, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return domain.Producto{}, errors.New("invalid ObjectID format")
 	}
 
-	// Construir update dinámico
 	update := bson.M{
 		"$set": bson.M{
 			"updated_at": time.Now().UTC(),
@@ -267,7 +251,7 @@ func (r *MongoProductosRepository) Update(ctx context.Context, id string, req do
 		setFields["disponible"] = *req.Disponible
 	}
 	if req.Variantes != nil {
-		// Convertir variantes domain a DAO
+
 		variantes := make([]dao.Variante, len(*req.Variantes))
 		for i, v := range *req.Variantes {
 			variantes[i] = dao.Variante{
@@ -278,7 +262,7 @@ func (r *MongoProductosRepository) Update(ctx context.Context, id string, req do
 		setFields["variantes"] = variantes
 	}
 	if req.Modificadores != nil {
-		// Convertir modificadores domain a DAO
+
 		modificadores := make([]dao.Modificador, len(*req.Modificadores))
 		for i, m := range *req.Modificadores {
 			modificadores[i] = dao.Modificador{
@@ -293,7 +277,6 @@ func (r *MongoProductosRepository) Update(ctx context.Context, id string, req do
 		setFields["tags"] = *req.Tags
 	}
 
-	// PASO 1: Ejecutar update en MongoDB (fuente de verdad)
 	filter := bson.M{"_id": objectID}
 	result := r.col.FindOneAndUpdate(
 		ctx,
@@ -314,14 +297,9 @@ func (r *MongoProductosRepository) Update(ctx context.Context, id string, req do
 		return domain.Producto{}, err
 	}
 
-	// PASO 2: Invalidar caché (si está disponible)
-	// Eliminamos el producto viejo de la caché para que la próxima lectura
-	// obtenga el valor actualizado de MongoDB
 	if r.cache != nil {
 		cacheKey := clients.BuildKey("producto", id)
 		if err := r.cache.Delete(cacheKey); err != nil {
-			// Log el error pero no fallar la operación
-			// El update en MongoDB ya se completó exitosamente
 			log.Printf("⚠️  Error invalidando caché para producto %s: %v", id, err)
 		}
 	}
@@ -329,7 +307,6 @@ func (r *MongoProductosRepository) Update(ctx context.Context, id string, req do
 	return updated, nil
 }
 
-// Delete elimina un producto por ID
 func (r *MongoProductosRepository) Delete(ctx context.Context, id string) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -354,7 +331,6 @@ func (r *MongoProductosRepository) Delete(ctx context.Context, id string) error 
 	return nil
 }
 
-// Quote calcula el precio total de un producto con variantes y modificadores seleccionados
 func (r *MongoProductosRepository) Quote(ctx context.Context, id string, varianteNombre string, modificadoresNombres []string) (float64, error) {
 	producto, err := r.GetByID(ctx, id)
 	if err != nil {
@@ -363,7 +339,6 @@ func (r *MongoProductosRepository) Quote(ctx context.Context, id string, variant
 
 	total := producto.PrecioBase
 
-	// Agregar precio de variante seleccionada
 	if varianteNombre != "" {
 		encontrada := false
 		for _, v := range producto.Variantes {
@@ -378,7 +353,6 @@ func (r *MongoProductosRepository) Quote(ctx context.Context, id string, variant
 		}
 	}
 
-	// Agregar precios de modificadores seleccionados
 	for _, nombreMod := range modificadoresNombres {
 		encontrado := false
 		for _, m := range producto.Modificadores {
