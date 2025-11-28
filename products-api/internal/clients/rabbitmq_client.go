@@ -68,17 +68,16 @@ func (r *RabbitMQClient) Publish(ctx context.Context, action string, itemID stri
 	return nil
 }
 
-// Consume inicia el consumo de mensajes de la cola
 func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Context, services.ProductoEvent) error) error {
-	// Configurar el consumer
+
 	msgs, err := r.channel.Consume(
-		r.queue.Name, // queue
-		"",           // consumer
-		true,         // auto-ack
-		false,        // exclusive
-		false,        // no-local
-		false,        // no-wait
-		nil,          // args
+		r.queue.Name,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to register consumer: %w", err)
@@ -86,7 +85,6 @@ func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Conte
 
 	log.Printf("Consumer registered for queue: %s", r.queue.Name)
 
-	// Loop infinito para consumir mensajes
 	for {
 		select {
 		case <-ctx.Done():
@@ -94,7 +92,6 @@ func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Conte
 			return ctx.Err()
 
 		case msg := <-msgs:
-			// Deserializar mensaje
 			var event services.ProductoEvent
 			if err := json.Unmarshal(msg.Body, &event); err != nil {
 				log.Printf("Error unmarshalling message: %v", err)
@@ -103,7 +100,6 @@ func (r *RabbitMQClient) Consume(ctx context.Context, handler func(context.Conte
 
 			log.Printf("Received message: action=%s, item_id=%s", event.Action, event.ItemID)
 
-			// Procesar mensaje
 			if err := handler(ctx, event); err != nil {
 				log.Printf("Error handling message: %v", err)
 			}

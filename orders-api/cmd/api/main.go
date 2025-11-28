@@ -29,11 +29,10 @@ func main() {
 	}
 	db := mongoClient.Database(cfg.Mongo.DB)
 
-	// Solr Client (antes del repository porque lo necesita)
+	// Solr Client
 	solrClient := clients.NewSolrClient(cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core)
 	log.Printf("Solr client configured: %s:%s/%s", cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core)
 
-	// Repository
 	ordersRepo := repository.NewMongoOrdersRepository(
 		ctx,
 		cfg.Mongo.URI,
@@ -70,15 +69,14 @@ func main() {
 	ordersController := controllers.NewOrdersController(ordersService)
 	groupOrderController := controllers.NewGroupOrderController(groupOrderService)
 
-	// Solr Indexer Consumer
 	solrIndexer := consumers.NewSolrIndexerConsumer(ordersRepo, solrClient)
 
-	// Iniciar consumer de RabbitMQ en una goroutine
+	// Iniciar consumer de RabbitMQ
 	go func() {
-		log.Println("🚀 Iniciando consumer de Solr Indexer...")
+		log.Println("Iniciando consumer de Solr Indexer...")
 		ctx := context.Background()
 		if err := rabbitClient.Consume(ctx, solrIndexer.HandleEvent); err != nil {
-			log.Printf("❌ Error en consumer de Solr: %v", err)
+			log.Printf("Error en consumer de Solr: %v", err)
 		}
 	}()
 
@@ -103,7 +101,7 @@ func main() {
 		orders.PUT("/:id/status", ordersController.UpdateStatus)
 		orders.DELETE("/:id", ordersController.Cancel)
 
-		// Group Orders (División de pagos)
+		// Group Orders
 		orders.POST("/group", groupOrderController.CreateGroupOrder)
 		orders.GET("/group/:id", groupOrderController.GetGroupOrder)
 		orders.PUT("/group/:id/payment/:persona_id", groupOrderController.UpdateSubOrderPayment)

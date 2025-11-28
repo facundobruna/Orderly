@@ -9,14 +9,12 @@ import (
 	"time"
 )
 
-// SolrClient es el cliente para interactuar con Apache Solr
 type SolrClient struct {
 	baseURL string // URL base de Solr (ej: http://localhost:8983/solr/productos)
 	core    string // Nombre del core (ej: productos)
 	client  *http.Client
 }
 
-// NewSolrClient crea una nueva instancia del cliente Solr
 func NewSolrClient(host, port, core string) *SolrClient {
 	baseURL := fmt.Sprintf("http://%s:%s/solr/%s", host, port, core)
 
@@ -29,7 +27,6 @@ func NewSolrClient(host, port, core string) *SolrClient {
 	}
 }
 
-// SolrProducto representa un producto en el formato que Solr espera
 type SolrProducto struct {
 	ID          string   `json:"id"`
 	NegocioID   string   `json:"negocio_id"`
@@ -41,8 +38,6 @@ type SolrProducto struct {
 	Disponible  bool     `json:"disponible"`
 	Tags        []string `json:"tags"`
 }
-
-// SolrProductoResponse representa un producto como Solr lo devuelve (con arrays)
 type SolrProductoResponse struct {
 	ID          string    `json:"id"`
 	NegocioID   []string  `json:"negocio_id"`
@@ -56,7 +51,6 @@ type SolrProductoResponse struct {
 }
 
 func (s *SolrClient) Index(producto domain.Producto) error {
-	// PASO 1: Convertir a formato Solr
 	solrDoc := SolrProducto{
 		ID:          producto.ID,
 		NegocioID:   producto.NegocioID,
@@ -69,8 +63,6 @@ func (s *SolrClient) Index(producto domain.Producto) error {
 		Tags:        producto.Tags,
 	}
 
-	// PASO 2: Crear payload en formato que Solr espera
-	// Solr requiere estructura: {"add": {"doc": {...}}}
 	payload := map[string]interface{}{
 		"add": map[string]interface{}{
 			"doc": solrDoc,
@@ -82,8 +74,6 @@ func (s *SolrClient) Index(producto domain.Producto) error {
 		return fmt.Errorf("error serializando documento: %w", err)
 	}
 
-	// PASO 3: Enviar a Solr
-	// commit=true hace que los cambios sean visibles inmediatamente
 	url := fmt.Sprintf("%s/update?commit=true", s.baseURL)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -97,7 +87,6 @@ func (s *SolrClient) Index(producto domain.Producto) error {
 	}
 	defer resp.Body.Close()
 
-	// PASO 4: Verificar respuesta
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("Solr retornó status %d", resp.StatusCode)
 	}
@@ -106,41 +95,21 @@ func (s *SolrClient) Index(producto domain.Producto) error {
 }
 
 func (s *SolrClient) Update(producto domain.Producto) error {
-	// En Solr, update = add (sobrescribe por ID)
 	return s.Index(producto)
 }
 
-// Delete elimina un documento de Solr por ID
-//
-// TODO: Implementar esta función
-// Pistas:
-//  1. Crear payload: {"delete": {"id": "producto_id"}}
-//  2. Marshal a JSON
-//  3. Enviar POST a /update?commit=true (igual que Index)
-//  4. Verificar respuesta
-//
-// Ejemplo de payload:
-//
-//	{
-//	  "delete": {
-//	    "id": "67890abcdef"
-//	  }
-//	}
 func (s *SolrClient) Delete(id string) error {
-	// PASO 1: Crear payload en formato Solr
 	payload := map[string]interface{}{
 		"delete": map[string]interface{}{
 			"id": id,
 		},
 	}
 
-	// PASO 2: Marshal a JSON
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("error serializando: %w", err)
 	}
 
-	// PASO 3: Enviar POST a /update?commit=true
 	url := fmt.Sprintf("%s/update?commit=true", s.baseURL)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -155,7 +124,6 @@ func (s *SolrClient) Delete(id string) error {
 	}
 	defer resp.Body.Close()
 
-	// PASO 4: Verificar respuesta
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("Solr retornó status %d", resp.StatusCode)
 	}
@@ -163,39 +131,8 @@ func (s *SolrClient) Delete(id string) error {
 	return nil
 }
 
-// Search busca productos en Solr
-//
-// TODO: Implementar esta función
-// Pistas:
-//  1. Construir query string con parámetros
-//  2. Enviar GET a /select?q=...&fq=...&rows=...&start=...
-//  3. Parsear respuesta JSON
-//  4. Convertir resultados a []domain.Producto
-//
-// Parámetros de búsqueda comunes:
-//   - q: query principal (ej: "pizza" o "*:*" para todos)
-//   - fq: filtros (ej: "categoria:comida")
-//   - rows: cantidad de resultados (limit)
-//   - start: offset para paginación
-//   - wt: formato de respuesta (json)
-//
-// Ejemplo de URL:
-//
-//	GET /select?q=pizza&fq=categoria:comida&rows=10&start=0&wt=json
-//
-// Respuesta de Solr tiene esta estructura:
-//
-//	{
-//	  "response": {
-//	    "numFound": 42,
-//	    "docs": [
-//	      {"id": "123", "nombre": "Pizza", ...},
-//	      ...
-//	    ]
-//	  }
-//	}
 func (s *SolrClient) Search(query string, filters map[string]string) ([]domain.Producto, error) {
-	// PASO 1: Construir URL con query params
+
 	url := fmt.Sprintf("%s/select", s.baseURL)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -203,13 +140,9 @@ func (s *SolrClient) Search(query string, filters map[string]string) ([]domain.P
 		return nil, fmt.Errorf("error creando request: %w", err)
 	}
 
-	// PASO 2: Agregar query parameters
 	q := req.URL.Query()
 
-	// Si la query no tiene campo específico y no es *:*, buscar en campos de texto
 	if query != "*:*" && !containsColon(query) {
-		// Agregar wildcards para búsqueda parcial
-		// Ejemplo: "pi" se convierte en "*pi*" para encontrar "pizza"
 		wildcardQuery := "*" + query + "*"
 		// Buscar en nombre, descripción o tags con wildcards
 		query = fmt.Sprintf("(nombre:%s OR descripcion:%s OR tags:%s)", wildcardQuery, wildcardQuery, wildcardQuery)

@@ -161,14 +161,14 @@ export default function OrdenesPage() {
 
               <div className="flex gap-2 ml-4">
                 <Button
-                  variant={filter === "activas" ? "outline" : "default"}
+                  variant={filter === "activas" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilter("activas")}
                 >
                   Activas
                 </Button>
                 <Button
-                  variant={filter === "todas" ? "outline" : "default"}
+                  variant={filter === "todas" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilter("todas")}
                 >

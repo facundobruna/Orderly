@@ -16,10 +16,7 @@ import (
 )
 
 func main() {
-	// Cargar configuración
 	cfg := config.Load()
-
-	// Contexto
 	ctx := context.Background()
 
 	cacheClient := clients.NewMemcachedClient(
@@ -27,20 +24,17 @@ func main() {
 		cfg.Memcached.TTLSeconds,
 	)
 
-	// Repository de productos (MongoDB)
 	productosRepo := repository.NewMongoProductosRepository(
 		ctx,
 		cfg.Mongo.URI,
 		cfg.Mongo.DB,
 		"productos",
 		cacheClient,
-		nil, // Sin Solr en el repository
+		nil,
 	)
 
-	// Solr Client para indexación desde el service
 	solrClient := clients.NewSolrClient(cfg.Solr.Host, cfg.Solr.Port, cfg.Solr.Core)
 
-	// RabbitMQ para eventos - actúa como productor Y consumidor
 	productosQueue := clients.NewRabbitMQClient(
 		cfg.RabbitMQ.Username,
 		cfg.RabbitMQ.Password,
@@ -49,34 +43,27 @@ func main() {
 		cfg.RabbitMQ.Port,
 	)
 
-	// Cliente para validar negocios con users-api
 	usersAPIClient := clients.NewUsersAPIClient(cfg.UsersAPI.BaseURL)
 
-	// Service de productos - Ahora recibe publisher Y consumer
 	productosService := services.NewProductosService(
 		productosRepo,
-		productosQueue, // como publisher
-		productosQueue, // como consumer
+		productosQueue,
+		productosQueue,
 		usersAPIClient,
-		solrClient, // para indexación
+		solrClient,
 	)
 
-	// Iniciar consumidor en goroutine
 	go productosService.InitConsumer(ctx)
 
-	// Controller de productos
 	productosController := controllers.NewProductosController(productosService)
 
-	// Configurar router
 	router := gin.Default()
 	router.Use(middleware.CORSMiddleware)
 
-	// Health check
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "products-api"})
 	})
 
-	// Rutas de productos
 	products := router.Group("/products")
 	{
 		products.POST("", productosController.Create)
@@ -88,7 +75,6 @@ func main() {
 		products.GET("/search", productosController.SearchProducts)
 	}
 
-	// Configuración del servidor
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           router,

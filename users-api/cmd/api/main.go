@@ -19,7 +19,6 @@ func main() {
 
 	ctx := context.Background()
 
-	// 🗄️ Inicializar repository de usuarios (MySQL)
 	usersRepo := repository.NewMySQLUsersRepository(
 		ctx,
 		cfg.MySQL.User,
@@ -42,53 +41,51 @@ func main() {
 	negociosController := controllers.NewNegociosController(negociosService)
 	mesasController := controllers.NewMesaController(mesasService)
 
-	// 🌐 Configurar router HTTP con Gin
 	router := gin.Default()
 
 	// Middleware CORS
 	router.Use(middleware.CORSMiddleware)
 
-	// 🏥 Health check endpoint
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "users-api"})
 	})
 
-	// 🔐 Rutas de autenticación (públicas)
+	//  Rutas de autenticación
 	auth := router.Group("/auth")
 	{
 		auth.POST("/register", authController.Register)
 		auth.POST("/login", authController.Login)
 	}
 
-	// 👤 Rutas protegidas de usuarios
+	//  Rutas protegidas de usuarios
 	users := router.Group("/users")
-	users.Use(middleware.AuthMiddleware()) // Middleware JWT
+	users.Use(middleware.AuthMiddleware())
 	{
 		users.GET("/me", usersController.GetMe)
 		users.GET("/:id", usersController.GetByID)
 	}
 
-	// 🏢 Rutas de negocios
+	// Rutas de negocios
 	negocios := router.Group("/negocios")
 	{
-		// Rutas públicas (IMPORTANTE: rutas específicas ANTES de rutas con parámetros)
-		negocios.GET("", negociosController.ListAll)                          // GET /negocios - listar todos
-		negocios.GET("/search-addresses", negociosController.SearchAddresses) // GET /negocios/search-addresses?q=query - autocomplete de direcciones
-		negocios.GET("/:id/exists", negociosController.Exists)                // GET /negocios/:id/exists - validar existencia
-		negocios.GET("/:id", negociosController.GetByID)                      // GET /negocios/:id - ver detalle
+		// Rutas públicas
+		negocios.GET("", negociosController.ListAll)
+		negocios.GET("/search-addresses", negociosController.SearchAddresses)
+		negocios.GET("/:id/exists", negociosController.Exists)
+		negocios.GET("/:id", negociosController.GetByID)
 
-		// Rutas protegidas (requieren autenticación)
+		// Rutas protegidas
 		negociosProtected := negocios.Group("")
 		negociosProtected.Use(middleware.AuthMiddleware())
 		{
-			negociosProtected.POST("", middleware.RequireRole("dueno"), negociosController.Create) // Solo dueños
-			negociosProtected.GET("/my", negociosController.ListMyNegocios)                        // Mis negocios
-			negociosProtected.PUT("/:id", negociosController.Update)                               // Actualizar
-			negociosProtected.DELETE("/:id", negociosController.Delete)                            // Eliminar
+			negociosProtected.POST("", middleware.RequireRole("dueno"), negociosController.Create)
+			negociosProtected.GET("/my", negociosController.ListMyNegocios)
+			negociosProtected.PUT("/:id", negociosController.Update)
+			negociosProtected.DELETE("/:id", negociosController.Delete)
 		}
 	}
 
-	// 🪑 Rutas de mesas (requieren autenticación) - Separadas para evitar conflictos
+	//rutas de mesas
 	mesas := router.Group("/negocios/:id/mesas")
 	mesas.Use(middleware.AuthMiddleware())
 	{
@@ -106,15 +103,15 @@ func main() {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	log.Printf("🚀 Users API listening on port %s", cfg.Port)
-	log.Printf("📊 Health check: http://localhost:%s/healthz", cfg.Port)
-	log.Printf("🔐 Auth endpoints:")
+	log.Printf(" Users API listening on port %s", cfg.Port)
+	log.Printf(" Health check: http://localhost:%s/healthz", cfg.Port)
+	log.Printf(" Auth endpoints:")
 	log.Printf("   POST http://localhost:%s/auth/register", cfg.Port)
 	log.Printf("   POST http://localhost:%s/auth/login", cfg.Port)
-	log.Printf("👤 Users endpoints (protected):")
+	log.Printf(" Users endpoints :")
 	log.Printf("   GET  http://localhost:%s/users/me", cfg.Port)
 	log.Printf("   GET  http://localhost:%s/users/:id", cfg.Port)
-	log.Printf("🏢 Negocios endpoints:")
+	log.Printf(" Negocios endpoints:")
 	log.Printf("   GET  http://localhost:%s/negocios (public)", cfg.Port)
 	log.Printf("   GET  http://localhost:%s/negocios/:id (public)", cfg.Port)
 	log.Printf("   GET  http://localhost:%s/negocios/my (protected)", cfg.Port)
